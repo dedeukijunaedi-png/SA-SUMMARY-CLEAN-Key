@@ -25,7 +25,7 @@ import {
   ReportData,
 } from "@/src/services/reportExport";
 import { currentYM, monthEnd, monthStart, todayYMD } from "@/src/lib/date";
-import { formatPercent, formatRupiah } from "@/src/lib/format";
+import { formatInt, formatPercent, formatRupiah } from "@/src/lib/format";
 
 type ReportTab = "whatsapp" | "mtd";
 
@@ -256,6 +256,72 @@ export const ReportsScreen: React.FC<{
             </Card>
           ))}
         </div>
+
+        <SectionTitle>Daftar Closing Produk & Jumlahnya</SectionTitle>
+        <Card testID="report-products" className="p-3.5">
+          {(() => {
+            const productList = data.productBreakdown ?? [];
+            if (productList.length === 0) {
+              return (
+                <p className="text-xs text-slate-400 dark:text-slate-500 py-1">
+                  Belum ada closing
+                </p>
+              );
+            }
+            const duesTotalQty = productList
+              .filter((p) => p.kind === "DUES")
+              .reduce((s, p) => s + p.quantity, 0);
+            const privTotalQty = productList
+              .filter((p) => p.kind === "PRIVATE")
+              .reduce((s, p) => s + p.quantity, 0);
+
+            return (
+              <div className="flex flex-col gap-2">
+                <div className="divide-y divide-slate-100 dark:divide-[#282A3A]">
+                  {productList.map((p) => (
+                    <div key={`${p.kind}::${p.productName}`} className="py-2 first:pt-0 last:pb-0 flex flex-col gap-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className={`shrink-0 px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase ${
+                              p.kind === "PRIVATE"
+                                ? "bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60"
+                                : "bg-teal-50 text-[#00A3A6] dark:bg-teal-950/50 dark:text-[#38D9D9] border border-teal-200 dark:border-teal-800/60"
+                            }`}
+                          >
+                            {p.kind === "PRIVATE" ? "Private" : "Dues"}
+                          </span>
+                          <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {p.productName}
+                          </span>
+                        </div>
+                        <span className="shrink-0 text-xs font-black text-slate-900 dark:text-white">
+                          {formatInt(p.quantity)} unit
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 text-[10.5px] text-slate-500 dark:text-slate-400">
+                        <span>
+                          Actual: <strong className="text-emerald-600 dark:text-emerald-400">{formatInt(p.actualQty)}</strong>
+                          {" · "}Delay: <strong className="text-amber-600 dark:text-amber-400">{formatInt(p.delayQty)}</strong>
+                          {" · "}Decom: <strong className="text-rose-600 dark:text-rose-400">{formatInt(p.decomQty)}</strong>
+                        </span>
+                        <span className="shrink-0 font-semibold text-slate-600 dark:text-slate-300">
+                          {formatRupiah(p.achievementRevenue)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-2 border-t border-slate-200 dark:border-[#282A3A] flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold">
+                  <span className="text-slate-600 dark:text-slate-300">Total Unit Closing</span>
+                  <span className="text-[#00A3A6] dark:text-[#38D9D9]">
+                    {formatInt(duesTotalQty)} Dues{privTotalQty > 0 ? ` · ${formatInt(privTotalQty)} Private` : ""}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+        </Card>
 
         <SectionTitle>Target Gap & Proyeksi (Gross & Aktual)</SectionTitle>
         <Card testID="report-gap" className="divide-y divide-slate-100 dark:divide-[#282A3A] py-1">

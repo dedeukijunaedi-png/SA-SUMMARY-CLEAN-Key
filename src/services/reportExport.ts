@@ -38,6 +38,17 @@ export interface MemberReport {
   leadsConv: number | null; // duesUnit/leads %
 }
 
+export interface ProductClosingSummary {
+  kind: "DUES" | "PRIVATE";
+  productName: string;
+  quantity: number;
+  actualQty: number;
+  delayQty: number;
+  decomQty: number;
+  grossRevenue: number;
+  achievementRevenue: number;
+}
+
 export interface ReportData {
   title: string;
   periodLabel: string;
@@ -95,6 +106,7 @@ export interface ReportData {
     projTotalGross: number;
     projTotalAch: number;
   };
+  productBreakdown?: ProductClosingSummary[];
 }
 
 export function buildReportData(
@@ -271,6 +283,35 @@ export function buildReportData(
       ? info.selectedProducts.map((p) => `${p.name} (${formatRupiah(p.price)})`).join(" & ")
       : "Rata-rata Produk Dues";
 
+  const prodClosingRows = db().getAllSync<any>(
+    `SELECT
+      i.kind AS kind,
+      i.product_name AS product_name,
+      COALESCE(SUM(i.quantity), 0) AS quantity,
+      COALESCE(SUM(CASE WHEN i.status='Actual' THEN i.quantity ELSE 0 END), 0) AS actualQty,
+      COALESCE(SUM(CASE WHEN i.status='Delay' THEN i.quantity ELSE 0 END), 0) AS delayQty,
+      COALESCE(SUM(CASE WHEN i.status='Decom' THEN i.quantity ELSE 0 END), 0) AS decomQty,
+      COALESCE(SUM(i.gross_revenue), 0) AS grossRevenue,
+      COALESCE(SUM(i.achievement_revenue), 0) AS achievementRevenue
+     FROM closing_items i
+     JOIN closing_transactions c ON c.id = i.closing_id
+     WHERE c.deleted_at IS NULL AND c.date BETWEEN ? AND ?
+     GROUP BY i.kind, i.product_name
+     ORDER BY CASE WHEN i.kind='DUES' THEN 0 ELSE 1 END ASC, quantity DESC, i.product_name ASC`,
+    [start, end],
+  );
+
+  const productBreakdown: ProductClosingSummary[] = prodClosingRows.map((r) => ({
+    kind: r.kind === "PRIVATE" ? "PRIVATE" : "DUES",
+    productName: String(r.product_name ?? ""),
+    quantity: Number(r.quantity ?? 0),
+    actualQty: Number(r.actualQty ?? 0),
+    delayQty: Number(r.delayQty ?? 0),
+    decomQty: Number(r.decomQty ?? 0),
+    grossRevenue: Number(r.grossRevenue ?? 0),
+    achievementRevenue: Number(r.achievementRevenue ?? 0),
+  }));
+
   return {
     title,
     periodLabel: `${displayDate(start)} - ${displayDate(end)} (${monthLabel(year, month)})`,
@@ -281,6 +322,7 @@ export function buildReportData(
     targetUnit: info.targetUnit,
     selectedProductsLabel,
     funnelRequirements: fReq,
+    productBreakdown,
     gap: {
       duesTarget: info.dues,
       duesGross: monthDues,
@@ -401,6 +443,115 @@ export function reportHtml(data: ReportData): string {
       ? data.gap.unitBreakdownAchTo100.map((b) => `${b.units} unit (${b.product.name})`).join(" atau ")
       : `${data.gap.unitsAchTo100} unit`;
 
+  const escHtml = (s: string) =>
+    String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  const productList = data.productBreakdown ?? [];
+  const duesProdList = productList.filter((p) => p.kind === "DUES");
+  const privProdList = productList.filter((p) => p.kind === "PRIVATE");
+  const sumProd = (arr: ProductClosingSummary[]) =>
+    arr.reduce(
+      (a, p) => ({
+        quantity: a.quantity + p.quantity,
+        actualQty: a.actualQty + p.actualQty,
+        delayQty: a.delayQty + p.delayQty,
+        decomQty: a.decomQty + p.decomQty,
+        grossRevenue: a.grossRevenue + p.grossRevenue,
+        achievementRevenue: a.achievementRevenue + p.achievementRevenue,
+      }),
+      { quantity: 0, actualQty: 0, delayQty: 0, decomQty: 0, grossRevenue: 0, achievementRevenue: 0 },
+    );
+  const duesProdSum = sumProd(duesProdList);
+  const privProdSum = sumProd(privProdList);
+  const allProdSum = sumProd(productList);
+
+  const productClosingRowsHtml = productList
+    .map(
+      (p) => `
+    <tr>
+      <td class="l"><strong>${escHtml(p.productName)}</strong></td>
+      <td class="l">
+        <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:9.5px;font-weight:700;${
+          p.kind === "PRIVATE"
+            ? "background:#F5F3FF;color:#6D28D9;border:1px solid #DDD6FE;"
+            : "background:#F0FDFA;color:#0F766E;border:1px solid #99F6E4;"
+        }">${p.kind === "PRIVATE" ? "Private" : "Dues"}</span>
+      </td>
+      <td style="font-weight:800;">${formatInt(p.quantity)}</td>
+      <td style="color:#059669;font-weight:700;">${formatInt(p.actualQty)}</td>
+      <td style="color:#D97706;font-weight:700;">${formatInt(p.delayQty)}</td>
+      <td style="color:#DC2626;font-weight:700;">${formatInt(p.decomQty)}</td>
+      <td>${rp(p.grossRevenue)}</td>
+      <td style="font-weight:700;color:#00A3A6;">${rp(p.achievementRevenue)}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const productClosingSectionHtml =
+    productList.length === 0
+      ? `<div class="callout" style="background:#FAFAFA;border-color:#E5E7EB;color:#6B7280;">Belum ada closing</div>`
+      : `
+  <table>
+    <thead>
+      <tr>
+        <th class="l">Nama Produk</th>
+        <th class="l">Kategori</th>
+        <th>Jumlah</th>
+        <th>Actual</th>
+        <th>Delay</th>
+        <th>Decom</th>
+        <th>Gross</th>
+        <th>Aktual</th>
+      </tr>
+    </thead>
+    <tbody>${productClosingRowsHtml}</tbody>
+    <tfoot>
+      ${
+        duesProdList.length > 0
+          ? `<tr>
+        <td class="l" colspan="2">TOTAL DUES</td>
+        <td>${formatInt(duesProdSum.quantity)}</td>
+        <td style="color:#059669;">${formatInt(duesProdSum.actualQty)}</td>
+        <td style="color:#D97706;">${formatInt(duesProdSum.delayQty)}</td>
+        <td style="color:#DC2626;">${formatInt(duesProdSum.decomQty)}</td>
+        <td>${rp(duesProdSum.grossRevenue)}</td>
+        <td style="color:#00A3A6;">${rp(duesProdSum.achievementRevenue)}</td>
+      </tr>`
+          : ""
+      }
+      ${
+        privProdList.length > 0
+          ? `<tr>
+        <td class="l" colspan="2">TOTAL PRIVATE</td>
+        <td>${formatInt(privProdSum.quantity)}</td>
+        <td style="color:#059669;">${formatInt(privProdSum.actualQty)}</td>
+        <td style="color:#D97706;">${formatInt(privProdSum.delayQty)}</td>
+        <td style="color:#DC2626;">${formatInt(privProdSum.decomQty)}</td>
+        <td>${rp(privProdSum.grossRevenue)}</td>
+        <td style="color:#8B5CF6;">${rp(privProdSum.achievementRevenue)}</td>
+      </tr>`
+          : ""
+      }
+      ${
+        duesProdList.length > 0 && privProdList.length > 0
+          ? `<tr>
+        <td class="l" colspan="2">TOTAL KESELURUHAN</td>
+        <td>${formatInt(allProdSum.quantity)}</td>
+        <td style="color:#059669;">${formatInt(allProdSum.actualQty)}</td>
+        <td style="color:#D97706;">${formatInt(allProdSum.delayQty)}</td>
+        <td style="color:#DC2626;">${formatInt(allProdSum.decomQty)}</td>
+        <td>${rp(allProdSum.grossRevenue)}</td>
+        <td style="color:#00A3A6;">${rp(allProdSum.achievementRevenue)}</td>
+      </tr>`
+          : ""
+      }
+    </tfoot>
+  </table>`;
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -423,7 +574,7 @@ export function reportHtml(data: ReportData): string {
     .kpi-val { font-size: 16px; font-weight: 800; color: #111827; margin: 2px 0; }
     .kpi-sub { font-size: 10px; color: #4B5563; }
 
-    h2 { font-size: 13px; margin: 18px 0 8px; border-left: 3.5px solid #00A3A6; padding-left: 8px; color: #111827; text-transform: uppercase; letter-spacing: 0.5px; }
+    h2 { font-size: 13px; margin: 18px 0 8px; border-left: 3.5px solid #00A3A6; padding-left: 8px; color: #111827; text-transform: uppercase; letter-spacing: 0.5px; page-break-after: avoid; break-after: avoid; }
     table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-bottom: 14px; }
     th, td { border: 1px solid #E5E7EB; padding: 6px 7px; text-align: right; }
     th { background: #F0FDFA; color: #0F766E; font-weight: 700; font-size: 10.5px; }
@@ -449,7 +600,8 @@ export function reportHtml(data: ReportData): string {
       @page { margin: 0.8cm; size: A4 landscape; }
       .header-bar { border-bottom: 2px solid #00A3A6; }
       table { page-break-inside: auto; }
-      tr { page-break-inside: avoid; page-break-after: auto; }
+      thead { display: table-header-group; }
+      tr { page-break-inside: avoid; break-inside: avoid; page-break-after: auto; }
     }
   </style>
 </head>
@@ -681,6 +833,10 @@ export function reportHtml(data: ReportData): string {
       </table>
     </div>
   </div>
+
+  <!-- Section 4: Daftar Closing Produk & Jumlahnya -->
+  <h2>4. Daftar Closing Produk &amp; Jumlahnya</h2>
+  ${productClosingSectionHtml}
 </body>
 </html>`;
 }
@@ -985,6 +1141,82 @@ export async function exportMonthlyExcel(year: number, month: number): Promise<n
     ["Projection Total Akademi (Aktual)", data.gap.projTotalAch],
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(gapAoa), "Target Gap");
+
+  const productList = data.productBreakdown ?? [];
+  const duesItems = productList.filter((p) => p.kind === "DUES");
+  const privItems = productList.filter((p) => p.kind === "PRIVATE");
+  const sumItems = (arr: ProductClosingSummary[]) =>
+    arr.reduce(
+      (a, p) => ({
+        quantity: a.quantity + p.quantity,
+        actualQty: a.actualQty + p.actualQty,
+        delayQty: a.delayQty + p.delayQty,
+        decomQty: a.decomQty + p.decomQty,
+        grossRevenue: a.grossRevenue + p.grossRevenue,
+        achievementRevenue: a.achievementRevenue + p.achievementRevenue,
+      }),
+      { quantity: 0, actualQty: 0, delayQty: 0, decomQty: 0, grossRevenue: 0, achievementRevenue: 0 },
+    );
+  const duesSum = sumItems(duesItems);
+  const privSum = sumItems(privItems);
+  const allSum = sumItems(productList);
+
+  const closingProductAoa: (string | number)[][] =
+    productList.length === 0
+      ? [["Info"], ["Belum ada closing"]]
+      : [
+          [
+            "Kategori",
+            "Nama Produk",
+            "Total Jumlah",
+            "Actual",
+            "Delay",
+            "Decom",
+            "Gross Revenue",
+            "Achievement (Aktual)",
+          ],
+          ...productList.map((p) => [
+            p.kind === "PRIVATE" ? "Private" : "Dues",
+            p.productName,
+            Math.round(p.quantity),
+            Math.round(p.actualQty),
+            Math.round(p.delayQty),
+            Math.round(p.decomQty),
+            Math.round(p.grossRevenue),
+            Math.round(p.achievementRevenue),
+          ]),
+          [
+            "TOTAL DUES",
+            "",
+            Math.round(duesSum.quantity),
+            Math.round(duesSum.actualQty),
+            Math.round(duesSum.delayQty),
+            Math.round(duesSum.decomQty),
+            Math.round(duesSum.grossRevenue),
+            Math.round(duesSum.achievementRevenue),
+          ],
+          [
+            "TOTAL PRIVATE",
+            "",
+            Math.round(privSum.quantity),
+            Math.round(privSum.actualQty),
+            Math.round(privSum.delayQty),
+            Math.round(privSum.decomQty),
+            Math.round(privSum.grossRevenue),
+            Math.round(privSum.achievementRevenue),
+          ],
+          [
+            "TOTAL KESELURUHAN",
+            "",
+            Math.round(allSum.quantity),
+            Math.round(allSum.actualQty),
+            Math.round(allSum.delayQty),
+            Math.round(allSum.decomQty),
+            Math.round(allSum.grossRevenue),
+            Math.round(allSum.achievementRevenue),
+          ],
+        ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(closingProductAoa), "Closing Produk");
 
   const filename = `sa_summary_${year}-${String(month).padStart(2, "0")}.xlsx`;
   const out = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;

@@ -1,5 +1,15 @@
 import React, { useState } from "react";
-import { Receipt, Trash, Plus } from "@phosphor-icons/react";
+import { Receipt, Trash, Plus, ChartBar } from "@phosphor-icons/react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Cell,
+} from "recharts";
 import { Header } from "@/src/components/ui/Header";
 import { Card } from "@/src/components/ui/Card";
 import { MonthNavigator, SelectField } from "@/src/components/ui/Inputs";
@@ -7,11 +17,25 @@ import { EmptyState, StatusPill } from "@/src/components/ui/UIComponents";
 import { useToast } from "@/src/components/ui/Toast";
 import { listClosings, listTeam, softDeleteClosing, ClosingWithItems } from "@/src/db/repo";
 import { currentYM, displayDateTime } from "@/src/lib/date";
-import { formatRupiah } from "@/src/lib/format";
+import { formatInt, formatRupiah } from "@/src/lib/format";
+import { useAppTheme } from "@/src/lib/theme";
 import { ClosingFormModal } from "./ClosingFormModal";
+
+interface ProductSummaryRow {
+  kind: "DUES" | "PRIVATE";
+  productName: string;
+  quantity: number;
+  actualQty: number;
+  delayQty: number;
+  decomQty: number;
+  grossRevenue: number;
+  achievementRevenue: number;
+}
 
 export const ClosingScreen: React.FC = () => {
   const { confirm, showToast } = useToast();
+  const { activeTheme } = useAppTheme();
+  const isDark = activeTheme === "dark";
   const [{ year, month }, setYM] = useState(currentYM());
   const [advisorId, setAdvisorId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -41,6 +65,58 @@ export const ClosingScreen: React.FC = () => {
     (a, c) => a + c.items.filter((i) => i.kind === "PRIVATE").reduce((s, i) => s + i.achievement_revenue, 0),
     0
   );
+
+  const productMap = new Map<string, ProductSummaryRow>();
+  for (const c of list) {
+    for (const item of c.items) {
+      const kind: "DUES" | "PRIVATE" = item.kind === "PRIVATE" ? "PRIVATE" : "DUES";
+      const key = `${kind}::${item.product_name}`;
+      const cur = productMap.get(key) ?? {
+        kind,
+        productName: item.product_name,
+        quantity: 0,
+        actualQty: 0,
+        delayQty: 0,
+        decomQty: 0,
+        grossRevenue: 0,
+        achievementRevenue: 0,
+      };
+      const qty = Number(item.quantity ?? 0);
+      cur.quantity += qty;
+      if (item.status === "Actual") cur.actualQty += qty;
+      else if (item.status === "Delay") cur.delayQty += qty;
+      else if (item.status === "Decom") cur.decomQty += qty;
+      cur.grossRevenue += Number(item.gross_revenue ?? 0);
+      cur.achievementRevenue += Number(item.achievement_revenue ?? 0);
+      productMap.set(key, cur);
+    }
+  }
+  const productBreakdown = Array.from(productMap.values()).sort((a, b) => {
+    if (a.kind !== b.kind) return a.kind === "DUES" ? -1 : 1;
+    if (b.quantity !== a.quantity) return b.quantity - a.quantity;
+    return a.productName.localeCompare(b.productName);
+  });
+  const privUnits = productBreakdown
+    .filter((p) => p.kind === "PRIVATE")
+    .reduce((s, p) => s + p.quantity, 0);
+
+  const nameCounts = new Map<string, number>();
+  for (const p of productBreakdown) {
+    nameCounts.set(p.productName, (nameCounts.get(p.productName) ?? 0) + 1);
+  }
+  const chartData = productBreakdown.map((p) => ({
+    ...p,
+    chartLabel:
+      (nameCounts.get(p.productName) ?? 0) > 1
+        ? `${p.productName} (${p.kind === "PRIVATE" ? "Private" : "Dues"})`
+        : p.productName,
+    kindLabel: p.kind === "PRIVATE" ? "Private" : "Dues",
+  }));
+  const chartHeight = Math.max(120, chartData.length * 36 + 32);
+  const gridColor = isDark ? "#262837" : "#E2E8F0";
+  const axisTextColor = isDark ? "#CBD5E1" : "#334155";
+  const barTeal = "#00A3A6";
+  const barPurple = "#8B5CF6";
 
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -115,6 +191,168 @@ export const ClosingScreen: React.FC = () => {
               </div>
             </div>
           </div>
+        </Card>
+
+        <Card testID="closing-product-chart" className="p-3.5">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <ChartBar size={16} weight="fill" className="text-[#00A3A6] dark:text-[#38D9D9]" />
+              <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                Grafik Distribusi Produk
+              </span>
+            </div>
+            {chartData.length > 0 && (
+              <div className="flex items-center gap-2.5 text-[10.5px] font-bold">
+                <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                  <span className="w-2.5 h-2.5 rounded-xs inline-block bg-[#00A3A6]" />
+                  Dues
+                </span>
+                <span className="inline-flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                  <span className="w-2.5 h-2.5 rounded-xs inline-block bg-[#8B5CF6]" />
+                  Private
+                </span>
+              </div>
+            )}
+          </div>
+
+          {chartData.length === 0 ? (
+            <p className="text-xs text-slate-400 dark:text-slate-500 py-1">Belum ada closing</p>
+          ) : (
+            <div className="w-full" style={{ height: `${chartHeight}px` }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  layout="vertical"
+                  margin={{ top: 4, right: 18, left: 4, bottom: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} horizontal={false} />
+                  <XAxis
+                    type="number"
+                    allowDecimals={false}
+                    tick={{ fill: axisTextColor, fontSize: 10.5 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="chartLabel"
+                    width={116}
+                    interval={0}
+                    tick={{ fill: axisTextColor, fontSize: 10.5, fontWeight: 600 }}
+                    tickFormatter={(v: string) => (v.length > 16 ? `${v.slice(0, 15)}…` : v)}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: isDark ? "rgba(255,255,255,0.05)" : "rgba(15,23,42,0.04)" }}
+                    content={({ active, payload }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const d = payload[0].payload as (typeof chartData)[number];
+                      return (
+                        <div
+                          className={`p-2.5 rounded-xl border shadow-lg text-xs max-w-[230px] ${
+                            isDark
+                              ? "bg-[#111116] text-white border-[#00A3A6]/40"
+                              : "bg-white text-slate-900 border-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 font-bold mb-1">
+                            <span
+                              className="w-2.5 h-2.5 rounded-xs shrink-0"
+                              style={{ backgroundColor: d.kind === "PRIVATE" ? barPurple : barTeal }}
+                            />
+                            <span className="break-words">{d.productName}</span>
+                          </div>
+                          <p className={`text-[10.5px] font-semibold mb-1 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                            Kategori: {d.kindLabel}
+                          </p>
+                          <div className="flex flex-col gap-0.5 text-[11px]">
+                            <div className="flex justify-between gap-3">
+                              <span className={isDark ? "text-slate-300" : "text-slate-600"}>Total Jumlah:</span>
+                              <span className="font-black">{formatInt(d.quantity)} unit</span>
+                            </div>
+                            <div className="flex justify-between gap-3">
+                              <span className={isDark ? "text-slate-300" : "text-slate-600"}>Actual / Delay / Decom:</span>
+                              <span className="font-semibold">
+                                {formatInt(d.actualQty)} / {formatInt(d.delayQty)} / {formatInt(d.decomQty)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between gap-3">
+                              <span className={isDark ? "text-slate-300" : "text-slate-600"}>Achievement:</span>
+                              <span className="font-bold text-[#00A3A6] dark:text-[#38D9D9]">
+                                {formatRupiah(d.achievementRevenue)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Bar dataKey="quantity" name="Jumlah" radius={[0, 6, 6, 0]} barSize={20}>
+                    {chartData.map((entry) => (
+                      <Cell
+                        key={`${entry.kind}::${entry.productName}`}
+                        fill={entry.kind === "PRIVATE" ? barPurple : barTeal}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </Card>
+
+        <Card testID="closing-product-summary" className="p-3.5">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+              Daftar Produk Closing
+            </span>
+            {productBreakdown.length > 0 && (
+              <span className="text-[11px] font-bold text-[#00A3A6] dark:text-[#38D9D9]">
+                {formatInt(duesUnits)} Dues{privUnits > 0 ? ` · ${formatInt(privUnits)} Private` : ""}
+              </span>
+            )}
+          </div>
+
+          {productBreakdown.length === 0 ? (
+            <p className="text-xs text-slate-400 dark:text-slate-500 py-1">Belum ada closing</p>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-[#282A3A]">
+              {productBreakdown.map((p) => (
+                <div key={`${p.kind}::${p.productName}`} className="py-2 first:pt-0 last:pb-0 flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span
+                        className={`shrink-0 px-1.5 py-0.5 rounded text-[9.5px] font-bold uppercase ${
+                          p.kind === "PRIVATE"
+                            ? "bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60"
+                            : "bg-teal-50 text-[#00A3A6] dark:bg-teal-950/50 dark:text-[#38D9D9] border border-teal-200 dark:border-teal-800/60"
+                        }`}
+                      >
+                        {p.kind === "PRIVATE" ? "Private" : "Dues"}
+                      </span>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {p.productName}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-xs font-black text-slate-900 dark:text-white">
+                      {formatInt(p.quantity)} unit
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-[10.5px] text-slate-500 dark:text-slate-400">
+                    <span>
+                      Actual: <strong className="text-emerald-600 dark:text-emerald-400">{formatInt(p.actualQty)}</strong>
+                      {" · "}Delay: <strong className="text-amber-600 dark:text-amber-400">{formatInt(p.delayQty)}</strong>
+                      {" · "}Decom: <strong className="text-rose-600 dark:text-rose-400">{formatInt(p.decomQty)}</strong>
+                    </span>
+                    <span className="shrink-0 font-semibold text-slate-600 dark:text-slate-300">
+                      {formatRupiah(p.achievementRevenue)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {list.length === 0 ? (
