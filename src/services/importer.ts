@@ -261,7 +261,7 @@ function buildFromNew(raw: any): Normalized {
     if (!itemsByClosing.has(it.closing_id)) itemsByClosing.set(it.closing_id, []);
     itemsByClosing.get(it.closing_id)!.push(it);
   }
-  const closings: NClosing[] = (d.closing_transactions ?? []).map((c: any) => ({
+  const closings: NClosing[] = (d.closing_transactions ?? []).filter((r: any) => !r.deleted_at).map((c: any) => ({
     date: c.date,
     time: c.time ?? null,
     timestamp: c.timestamp || `${c.date}T00:00:00.000Z`,
@@ -280,7 +280,7 @@ function buildFromNew(raw: any): Normalized {
     })),
   })).filter((c: NClosing) => c.advisor_name);
 
-  const production: NProduction[] = (d.daily_production ?? []).map((p: any) => ({
+  const production: NProduction[] = (d.daily_production ?? []).filter((r: any) => !r.deleted_at).map((p: any) => ({
     date: p.date,
     advisor_name: memById.get(p.advisor_id) ?? "",
     leads: p.leads || 0,
@@ -291,13 +291,13 @@ function buildFromNew(raw: any): Normalized {
     updated_at: p.updated_at || nowISO(),
   })).filter((p: NProduction) => p.advisor_name);
 
-  const coed: NCoed[] = (d.coed_entries ?? []).map((c: any) => ({
+  const coed: NCoed[] = (d.coed_entries ?? []).filter((r: any) => !r.deleted_at).map((c: any) => ({
     date: c.date,
     category: c.category as CoedCategory,
     amount: Math.round(c.amount || 0),
     created_at: c.created_at || nowISO(),
   }));
-  const cancellations: NCancel[] = (d.cancellation_entries ?? []).map((c: any) => ({
+  const cancellations: NCancel[] = (d.cancellation_entries ?? []).filter((r: any) => !r.deleted_at).map((c: any) => ({
     date: c.date,
     advisor_name: memById.get(c.advisor_id) ?? "",
     qty: c.qty || 1,
