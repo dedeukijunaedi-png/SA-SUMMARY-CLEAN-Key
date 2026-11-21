@@ -20,7 +20,8 @@ function pctLabel(v: number | null): string {
 export const FunnelView: React.FC<{
   data: FunnelData;
   requirements?: FunnelRequirements;
-}> = ({ data, requirements }) => {
+  compact?: boolean;
+}> = ({ data, requirements, compact = false }) => {
   const [showTips, setShowTips] = useState(true);
   const max = Math.max(data.leads, data.appointment, data.show, data.interview, data.duesUnit, 1);
 
@@ -33,30 +34,40 @@ export const FunnelView: React.FC<{
   ];
 
   return (
-    <div data-testid="funnel-view" className="py-2 flex flex-col gap-4">
+    <div data-testid="funnel-view" className={`flex flex-col ${compact ? "py-0.5 gap-2" : "py-2 gap-4"}`}>
       <div>
         {steps.map((s, i) => {
           const width = `${Math.max(22, (s.value / max) * 100)}%`;
           return (
             <div key={s.label}>
               {i > 0 && (
-                <div className="flex items-center justify-center gap-2 py-1 text-slate-400">
-                  <ArrowDown size={14} weight="bold" />
+                <div className={`flex items-center justify-center gap-1.5 text-slate-400 ${compact ? "py-0.5" : "py-1 gap-2"}`}>
+                  <ArrowDown size={compact ? 11 : 14} weight="bold" />
                   {s.conv !== undefined && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-[#00A3A6]/15 text-[#00A3A6] dark:text-[#38D9D9] border border-[#00A3A6]/30">
+                    <span
+                      className={`inline-flex items-center rounded-full font-extrabold bg-[#00A3A6]/15 text-[#00A3A6] dark:text-[#38D9D9] border border-[#00A3A6]/30 ${
+                        compact ? "px-1.5 py-0 text-[10px]" : "px-2 py-0.5 text-[11px]"
+                      }`}
+                    >
                       {pctLabel(s.conv ?? null)}
                     </span>
                   )}
                 </div>
               )}
-              <div className="flex items-center gap-3">
+              <div className={`flex items-center ${compact ? "gap-2" : "gap-3"}`}>
                 <div
-                  className={`${s.color} rounded-xl py-2 px-3 text-xs truncate shadow-2xs transition-all duration-300 font-bold`}
+                  className={`${s.color} rounded-xl truncate shadow-2xs transition-all duration-300 font-bold ${
+                    compact ? "py-1 px-2 text-[11px]" : "py-2 px-3 text-xs"
+                  }`}
                   style={{ width }}
                 >
                   {s.label}
                 </div>
-                <span className="font-extrabold text-sm text-slate-900 dark:text-white shrink-0 min-w-[48px] text-right">
+                <span
+                  className={`font-extrabold text-slate-900 dark:text-white shrink-0 text-right ${
+                    compact ? "text-xs min-w-[36px]" : "text-sm min-w-[48px]"
+                  }`}
+                >
                   {formatInt(s.value)}
                 </span>
               </div>
@@ -64,41 +75,49 @@ export const FunnelView: React.FC<{
           );
         })}
 
-        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100 dark:border-[#282A3A]">
-          <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+        <div
+          className={`flex items-center justify-between border-t border-slate-100 dark:border-[#282A3A] ${
+            compact ? "mt-2 pt-1.5" : "mt-3 pt-2.5"
+          }`}
+        >
+          <span className={`font-bold text-slate-600 dark:text-slate-400 ${compact ? "text-[11px]" : "text-xs"}`}>
             Total Leads → Closing Unit Conversion
           </span>
-          <span className="text-sm font-black text-[#00A3A6] dark:text-[#38D9D9]">
+          <span className={`font-black text-[#00A3A6] dark:text-[#38D9D9] ${compact ? "text-xs" : "text-sm"}`}>
             {pctLabel(data.leadsConv)}
           </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 border-t border-slate-100 dark:border-[#282A3A]">
-        <div className="p-2 rounded-xl bg-slate-50 dark:bg-[#161722] border border-slate-200/80 dark:border-[#282A3A] text-center">
-          <p className="text-[10px] text-slate-500 uppercase font-semibold">Lead → Appt</p>
-          <p className="text-sm font-black text-[#00B5B5] mt-0.5">{pctLabel(data.apptConv)}</p>
+      <div
+        className={`grid grid-cols-2 sm:grid-cols-4 pt-1 border-t border-slate-100 dark:border-[#282A3A] ${
+          compact ? "gap-1.5" : "gap-2"
+        }`}
+      >
+        <div className={`${compact ? "p-1.5" : "p-2"} rounded-xl bg-slate-50 dark:bg-[#161722] border border-slate-200/80 dark:border-[#282A3A] text-center`}>
+          <p className={`${compact ? "text-[9px]" : "text-[10px]"} text-slate-500 uppercase font-semibold`}>Lead → Appt</p>
+          <p className={`${compact ? "text-xs" : "text-sm"} font-black text-[#00B5B5] mt-0.5`}>{pctLabel(data.apptConv)}</p>
         </div>
-        <div className="p-2 rounded-xl bg-slate-50 dark:bg-[#161722] border border-slate-200/80 dark:border-[#282A3A] text-center">
-          <p className="text-[10px] text-slate-500 uppercase font-semibold">Appt → Show</p>
-          <p className="text-sm font-black text-[#FF6B35] mt-0.5">{pctLabel(data.showRate)}</p>
+        <div className={`${compact ? "p-1.5" : "p-2"} rounded-xl bg-slate-50 dark:bg-[#161722] border border-slate-200/80 dark:border-[#282A3A] text-center`}>
+          <p className={`${compact ? "text-[9px]" : "text-[10px]"} text-slate-500 uppercase font-semibold`}>Appt → Show</p>
+          <p className={`${compact ? "text-xs" : "text-sm"} font-black text-[#FF6B35] mt-0.5`}>{pctLabel(data.showRate)}</p>
         </div>
-        <div className="p-2 rounded-xl bg-slate-50 dark:bg-[#161722] border border-slate-200/80 dark:border-[#282A3A] text-center">
-          <p className="text-[10px] text-slate-500 uppercase font-semibold">Show → Interview</p>
-          <p className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{pctLabel(data.interviewRate)}</p>
+        <div className={`${compact ? "p-1.5" : "p-2"} rounded-xl bg-slate-50 dark:bg-[#161722] border border-slate-200/80 dark:border-[#282A3A] text-center`}>
+          <p className={`${compact ? "text-[9px]" : "text-[10px]"} text-slate-500 uppercase font-semibold`}>Show → Interview</p>
+          <p className={`${compact ? "text-xs" : "text-sm"} font-black text-emerald-600 dark:text-emerald-400 mt-0.5`}>{pctLabel(data.interviewRate)}</p>
         </div>
-        <div className="p-2 rounded-xl bg-slate-50 dark:bg-[#161722] border border-slate-200/80 dark:border-[#282A3A] text-center">
-          <p className="text-[10px] text-slate-500 uppercase font-semibold">Interview → Close</p>
-          <p className="text-sm font-black text-[#00A3A6] dark:text-[#38D9D9] mt-0.5">{pctLabel(data.closeRate)}</p>
+        <div className={`${compact ? "p-1.5" : "p-2"} rounded-xl bg-slate-50 dark:bg-[#161722] border border-slate-200/80 dark:border-[#282A3A] text-center`}>
+          <p className={`${compact ? "text-[9px]" : "text-[10px]"} text-slate-500 uppercase font-semibold`}>Interview → Close</p>
+          <p className={`${compact ? "text-xs" : "text-sm"} font-black text-[#00A3A6] dark:text-[#38D9D9] mt-0.5`}>{pctLabel(data.closeRate)}</p>
         </div>
       </div>
 
       {requirements && (
-        <div className="flex flex-col gap-2.5 pt-2 border-t border-slate-100 dark:border-[#282A3A]">
+        <div className={`flex flex-col border-t border-slate-100 dark:border-[#282A3A] ${compact ? "gap-1.5 pt-1.5" : "gap-2.5 pt-2"}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[#00A3A6] dark:text-[#38D9D9]">
-              <Target size={16} weight="bold" />
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <Target size={compact ? 14 : 16} weight="bold" />
+              <h4 className={`${compact ? "text-[11px]" : "text-xs"} font-bold uppercase tracking-wider text-slate-900 dark:text-white`}>
                 Kebutuhan Pipeline Menuju Target Unit
               </h4>
             </div>
@@ -107,59 +126,59 @@ export const FunnelView: React.FC<{
             </span>
           </div>
 
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-[#00A3A6]/10 via-teal-500/5 to-transparent border border-[#00A3A6]/30">
-            <div className="flex justify-between items-center text-xs pb-2 border-b border-teal-500/20">
+          <div className={`${compact ? "p-2" : "p-3"} rounded-2xl bg-gradient-to-br from-[#00A3A6]/10 via-teal-500/5 to-transparent border border-[#00A3A6]/30`}>
+            <div className={`flex justify-between items-center border-b border-teal-500/20 ${compact ? "text-[11px] pb-1.5" : "text-xs pb-2"}`}>
               <span className="text-slate-600 dark:text-slate-300 font-semibold">
                 Sisa Target Unit Dibutuhkan:
               </span>
-              <span className="text-sm font-black text-[#00A3A6] dark:text-[#38D9D9]">
+              <span className={`${compact ? "text-xs" : "text-sm"} font-black text-[#00A3A6] dark:text-[#38D9D9]`}>
                 {formatInt(requirements.remainingUnit)} Unit
               </span>
             </div>
 
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 my-2 leading-relaxed">
+            <p className={`${compact ? "text-[10px] my-1.5" : "text-[11px] my-2"} text-slate-500 dark:text-slate-400 leading-relaxed`}>
               Berdasarkan rasio konversi tim saat ini, untuk menghasilkan{" "}
               <strong>{formatInt(requirements.remainingUnit)} unit</strong> di sisa{" "}
               <strong>{requirements.daysRemaining} hari</strong>, tim membutuhkan:
             </p>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-2 rounded-xl bg-white dark:bg-[#1E202B] border border-slate-200/90 dark:border-[#282A3A] shadow-2xs">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">Butuh Leads</span>
-                <p className="text-base font-black text-slate-900 dark:text-white">
+            <div className={`grid grid-cols-2 ${compact ? "gap-1.5 text-[11px]" : "gap-2 text-xs"}`}>
+              <div className={`${compact ? "p-1.5" : "p-2"} rounded-xl bg-white dark:bg-[#1E202B] border border-slate-200/90 dark:border-[#282A3A] shadow-2xs`}>
+                <span className={`${compact ? "text-[9px]" : "text-[10px]"} text-slate-400 uppercase font-semibold`}>Butuh Leads</span>
+                <p className={`${compact ? "text-sm" : "text-base"} font-black text-slate-900 dark:text-white`}>
                   {formatInt(requirements.neededRemaining.leads)}
                 </p>
-                <p className="text-[10px] text-[#00A3A6] dark:text-[#38D9D9] font-bold mt-0.5">
+                <p className={`${compact ? "text-[9.5px]" : "text-[10px]"} text-[#00A3A6] dark:text-[#38D9D9] font-bold mt-0.5`}>
                   ~{requirements.dailyPacing.leads}/hari ({requirements.perAdvisorRemaining.leads}/SA)
                 </p>
               </div>
 
-              <div className="p-2 rounded-xl bg-white dark:bg-[#1E202B] border border-slate-200/90 dark:border-[#282A3A] shadow-2xs">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">Butuh Appointment</span>
-                <p className="text-base font-black text-slate-900 dark:text-white">
+              <div className={`${compact ? "p-1.5" : "p-2"} rounded-xl bg-white dark:bg-[#1E202B] border border-slate-200/90 dark:border-[#282A3A] shadow-2xs`}>
+                <span className={`${compact ? "text-[9px]" : "text-[10px]"} text-slate-400 uppercase font-semibold`}>Butuh Appointment</span>
+                <p className={`${compact ? "text-sm" : "text-base"} font-black text-slate-900 dark:text-white`}>
                   {formatInt(requirements.neededRemaining.appointment)}
                 </p>
-                <p className="text-[10px] text-[#00B5B5] font-bold mt-0.5">
+                <p className={`${compact ? "text-[9.5px]" : "text-[10px]"} text-[#00B5B5] font-bold mt-0.5`}>
                   ~{requirements.dailyPacing.appointment}/hari ({requirements.perAdvisorRemaining.appointment}/SA)
                 </p>
               </div>
 
-              <div className="p-2 rounded-xl bg-white dark:bg-[#1E202B] border border-slate-200/90 dark:border-[#282A3A] shadow-2xs">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">Butuh Show (Kehadiran)</span>
-                <p className="text-base font-black text-slate-900 dark:text-white">
+              <div className={`${compact ? "p-1.5" : "p-2"} rounded-xl bg-white dark:bg-[#1E202B] border border-slate-200/90 dark:border-[#282A3A] shadow-2xs`}>
+                <span className={`${compact ? "text-[9px]" : "text-[10px]"} text-slate-400 uppercase font-semibold`}>Butuh Show (Kehadiran)</span>
+                <p className={`${compact ? "text-sm" : "text-base"} font-black text-slate-900 dark:text-white`}>
                   {formatInt(requirements.neededRemaining.show)}
                 </p>
-                <p className="text-[10px] text-[#FF6B35] font-bold mt-0.5">
+                <p className={`${compact ? "text-[9.5px]" : "text-[10px]"} text-[#FF6B35] font-bold mt-0.5`}>
                   ~{requirements.dailyPacing.show}/hari ({requirements.perAdvisorRemaining.show}/SA)
                 </p>
               </div>
 
-              <div className="p-2 rounded-xl bg-white dark:bg-[#1E202B] border border-slate-200/90 dark:border-[#282A3A] shadow-2xs">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">Butuh Interview</span>
-                <p className="text-base font-black text-slate-900 dark:text-white">
+              <div className={`${compact ? "p-1.5" : "p-2"} rounded-xl bg-white dark:bg-[#1E202B] border border-slate-200/90 dark:border-[#282A3A] shadow-2xs`}>
+                <span className={`${compact ? "text-[9px]" : "text-[10px]"} text-slate-400 uppercase font-semibold`}>Butuh Interview</span>
+                <p className={`${compact ? "text-sm" : "text-base"} font-black text-slate-900 dark:text-white`}>
                   {formatInt(requirements.neededRemaining.interview)}
                 </p>
-                <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
+                <p className={`${compact ? "text-[9.5px]" : "text-[10px]"} text-emerald-600 dark:text-emerald-400 font-bold mt-0.5`}>
                   ~{requirements.dailyPacing.interview}/hari ({requirements.perAdvisorRemaining.interview}/SA)
                 </p>
               </div>

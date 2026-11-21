@@ -39,11 +39,13 @@ import { useAppTheme } from "@/src/lib/theme";
 interface AnalyticsViewProps {
   selectedYear: number;
   selectedMonth: number;
+  compact?: boolean;
 }
 
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   selectedYear,
   selectedMonth,
+  compact = false,
 }) => {
   const { activeTheme } = useAppTheme();
   const isDark = activeTheme === "dark";
@@ -111,13 +113,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-3.5 animate-fadeIn">
+    <div className={`flex flex-col animate-fadeIn ${compact ? "gap-2" : "gap-3.5"}`}>
       <div className="flex items-center justify-between gap-2 px-0.5">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-[#00A3A6] text-white flex items-center justify-center font-black shadow-xs">
             <Flame size={14} weight="fill" />
           </div>
-          <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">
+          <span className={`${compact ? "text-[11px]" : "text-xs"} font-black uppercase tracking-wider text-slate-800 dark:text-white`}>
             Performance Insights
           </span>
         </div>
@@ -131,7 +133,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             <button
               key={r.val}
               onClick={() => setTimeRange(r.val)}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              className={`${compact ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs"} font-bold rounded-lg transition-all cursor-pointer ${
                 timeRange === r.val
                   ? "bg-[#00A3A6] text-white shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -143,12 +145,12 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5">
-        <Card className="p-3 bg-gradient-to-br from-white to-teal-50/40 dark:from-[#0F172A] dark:to-[#0B2545]/40 border-[#00A3A6]/30">
-          <div className="flex items-center justify-between text-xs">
+      <div className={`grid grid-cols-2 ${compact ? "gap-1.5" : "gap-2.5"}`}>
+        <Card className={`${compact ? "!p-2" : "p-3"} bg-gradient-to-br from-white to-teal-50/40 dark:from-[#0F172A] dark:to-[#0B2545]/40 border-[#00A3A6]/30`}>
+          <div className={`flex items-center justify-between ${compact ? "text-[11px]" : "text-xs"}`}>
             <span className="text-slate-500 dark:text-slate-400 font-medium">Total Ach ({timeRange} Bln)</span>
             <div
-              className={`flex items-center gap-0.5 font-bold text-[11px] px-1.5 py-0.5 rounded ${
+              className={`flex items-center gap-0.5 font-bold ${compact ? "text-[10px]" : "text-[11px]"} px-1.5 py-0.5 rounded ${
                 analytics.momRevenueGrowth >= 0
                   ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                   : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
@@ -158,19 +160,19 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               <span>{analytics.momRevenueGrowth > 0 ? `+${analytics.momRevenueGrowth}%` : `${analytics.momRevenueGrowth}%`}</span>
             </div>
           </div>
-          <p className="text-lg font-black text-slate-900 dark:text-white mt-1 tracking-tight">
+          <p className={`${compact ? "text-base" : "text-lg"} font-black text-slate-900 dark:text-white mt-1 tracking-tight`}>
             {formatCompactRupiah(totalPeriodAch)}
           </p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className={`${compact ? "text-[10px]" : "text-[11px]"} text-slate-500 dark:text-slate-400 mt-0.5`}>
             Rata-rata {formatCompactRupiah(avgMonthlyAch)}/bln
           </p>
         </Card>
 
-        <Card className="p-3 bg-gradient-to-br from-white to-amber-50/40 dark:from-[#171821] dark:to-[#1E1B15] border-amber-400/20">
-          <div className="flex items-center justify-between text-xs">
+        <Card className={`${compact ? "!p-2" : "p-3"} bg-gradient-to-br from-white to-amber-50/40 dark:from-[#171821] dark:to-[#1E1B15] border-amber-400/20`}>
+          <div className={`flex items-center justify-between ${compact ? "text-[11px]" : "text-xs"}`}>
             <span className="text-slate-500 dark:text-slate-400 font-medium">Produksi Leads</span>
             <div
-              className={`flex items-center gap-0.5 font-bold text-[11px] px-1.5 py-0.5 rounded ${
+              className={`flex items-center gap-0.5 font-bold ${compact ? "text-[10px]" : "text-[11px]"} px-1.5 py-0.5 rounded ${
                 analytics.momLeadsGrowth >= 0
                   ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                   : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
@@ -180,16 +182,16 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               <span>{analytics.momLeadsGrowth > 0 ? `+${analytics.momLeadsGrowth}%` : `${analytics.momLeadsGrowth}%`}</span>
             </div>
           </div>
-          <p className="text-lg font-black text-slate-900 dark:text-white mt-1 tracking-tight">
+          <p className={`${compact ? "text-base" : "text-lg"} font-black text-slate-900 dark:text-white mt-1 tracking-tight`}>
             {formatInt(totalPeriodLeads)}
           </p>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className={`${compact ? "text-[10px]" : "text-[11px]"} text-slate-500 dark:text-slate-400 mt-0.5`}>
             {formatInt(totalPeriodUnits)} unit closing dues
           </p>
         </Card>
       </div>
 
-      <Card className="flex flex-col gap-3 p-3.5">
+      <Card className={`flex flex-col ${compact ? "!p-2.5 gap-2" : "p-3.5 gap-3"}`}>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-1.5">
@@ -237,7 +239,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           </div>
         </div>
 
-        <div className="w-full h-64 mt-1">
+        <div className={`w-full ${compact ? "h-52" : "h-64"} mt-1`}>
           <ResponsiveContainer width="100%" height="100%">
             {closingMetric === "revenue" ? (
               <ComposedChart
@@ -339,7 +341,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
       </Card>
 
-      <Card className="flex flex-col gap-3 p-3.5">
+      <Card className={`flex flex-col ${compact ? "!p-2.5 gap-2" : "p-3.5 gap-3"}`}>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-1.5">
@@ -377,7 +379,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           </div>
         </div>
 
-        <div className="w-full h-64 mt-1">
+        <div className={`w-full ${compact ? "h-52" : "h-64"} mt-1`}>
           <ResponsiveContainer width="100%" height="100%">
             {productionView === "monthly" ? (
               <ComposedChart
@@ -490,7 +492,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
       </Card>
 
-      <Card className="flex flex-col gap-3 p-3.5">
+      <Card className={`flex flex-col ${compact ? "!p-2.5 gap-2" : "p-3.5 gap-3"}`}>
         <div>
           <div className="flex items-center gap-1.5">
             <Sparkle size={18} weight="fill" className="text-[#00A3A6]" />
@@ -503,7 +505,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           </p>
         </div>
 
-        <div className="w-full h-52">
+        <div className={`w-full ${compact ? "h-44" : "h-52"}`}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={analytics.productionTrends}
@@ -552,7 +554,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
       </Card>
 
-      <Card className="flex flex-col gap-3.5 p-4 border-[#00A3A6]/30 bg-gradient-to-br from-white via-white to-teal-50/30 dark:from-[#171822] dark:via-[#171822] dark:to-[#0F172A]">
+      <Card className={`flex flex-col ${compact ? "!p-2.5 gap-2" : "p-4 gap-3.5"} border-[#00A3A6]/30 bg-gradient-to-br from-white via-white to-teal-50/30 dark:from-[#171822] dark:via-[#171822] dark:to-[#0F172A]`}>
         <div>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
