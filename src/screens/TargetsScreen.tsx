@@ -40,7 +40,7 @@ export const TargetsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     setSelectedProductIds(prods.map((p) => p.id));
   }, [year, month]);
 
-  const count = membersWithTargetCount();
+  const count = membersWithTargetCount(year, month);
   const personalDues = count > 0 ? Math.round(dues / count) : 0;
   const personalPriv = count > 0 ? Math.round(priv / count) : 0;
   const personalTotal = personalDues + personalPriv;
@@ -52,8 +52,8 @@ export const TargetsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   }, [selectedProductIds, allProducts]);
 
   const unitDetails = useMemo(() => {
-    return calculateTargetUnitDetails(dues, selectedProducts);
-  }, [dues, selectedProducts]);
+    return calculateTargetUnitDetails(dues, selectedProducts, year, month);
+  }, [dues, selectedProducts, year, month]);
 
   const handleToggleProduct = (productId: number) => {
     if (selectedProductIds.includes(productId)) {

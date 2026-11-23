@@ -151,8 +151,14 @@ export const MIGRATIONS: Record<number, string> = {
     summary TEXT
   );
   `,
-  2: `
-  ALTER TABLE whatsapp_reports ADD COLUMN verified INTEGER NOT NULL DEFAULT 0;
-  ALTER TABLE whatsapp_reports ADD COLUMN collection_verified INTEGER NOT NULL DEFAULT 0;
-  `,
+  // Migrasi 2 ditangani lewat COLUMN_MIGRATIONS (cek kolom dulu, aman dijalankan ulang).
+  2: `SELECT 1;`,
+};
+
+// Kolom yang ditambahkan oleh migrasi tertentu. Dijalankan hanya bila kolom belum ada.
+export const COLUMN_MIGRATIONS: Record<number, { table: string; column: string; def: string }[]> = {
+  2: [
+    { table: "whatsapp_reports", column: "verified", def: "INTEGER NOT NULL DEFAULT 0" },
+    { table: "whatsapp_reports", column: "collection_verified", def: "INTEGER NOT NULL DEFAULT 0" },
+  ],
 };

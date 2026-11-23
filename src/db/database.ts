@@ -1,6 +1,6 @@
 
 import { nowISO } from "@/src/lib/date";
-import { MIGRATIONS, SCHEMA_VERSION } from "./schema";
+import { COLUMN_MIGRATIONS, MIGRATIONS, SCHEMA_VERSION } from "./schema";
 import {
   configurePersist,
   flushNow,
@@ -141,6 +141,16 @@ export function runMigrations() {
         db.execSync(sql);
       } catch (e) {
         console.warn(`Migration ${v} note:`, e);
+      }
+      for (const c of COLUMN_MIGRATIONS[v] ?? []) {
+        const cols = db.getAllSync<{ name: string }>(`PRAGMA table_info(${c.table})`);
+        if (!cols.some((x) => x.name === c.column)) {
+          try {
+            db.execSync(`ALTER TABLE ${c.table} ADD COLUMN ${c.column} ${c.def}`);
+          } catch (e) {
+            console.warn(`Migration ${v} kolom ${c.column}:`, e);
+          }
+        }
       }
       db.execSync(`PRAGMA user_version = ${v}`);
       current = v;

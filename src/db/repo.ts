@@ -316,18 +316,20 @@ export function saveCoedBatchForDate(
   items: { category: CoedCategory; amount: number }[],
 ) {
   const ts = nowISO();
-  db().runSync(
-    "UPDATE coed_entries SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND date = ?",
-    [ts, ts, date],
-  );
-  for (const item of items) {
-    if (item.amount > 0) {
-      db().runSync(
-        "INSERT INTO coed_entries (date, category, amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-        [date, item.category, item.amount, ts, ts],
-      );
+  db().withTransactionSync(() => {
+    db().runSync(
+      "UPDATE coed_entries SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL AND date = ?",
+      [ts, ts, date],
+    );
+    for (const item of items) {
+      if (item.amount > 0) {
+        db().runSync(
+          "INSERT INTO coed_entries (date, category, amount, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+          [date, item.category, item.amount, ts, ts],
+        );
+      }
     }
-  }
+  });
 }
 
 export function addCoed(date: string, category: CoedCategory, amount: number) {

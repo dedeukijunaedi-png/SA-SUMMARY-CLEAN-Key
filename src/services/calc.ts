@@ -196,8 +196,26 @@ export function project(valueToDate: number, year: number, month: number, asOfDa
   return Math.round((valueToDate / day) * dim);
 }
 
-export function membersWithTargetCount(): number {
-  return activeTeam().filter((m) => m.has_target === 1).length;
+// Tanpa year/month: anggota aktif ber-target (saat ini).
+// Dengan year/month: ditambah anggota nonaktif ber-target yang punya closing atau produksi
+// pada bulan itu, supaya target per orang bulan lampau tidak bergeser setelah ada yang dinonaktifkan.
+export function membersWithTargetCount(year?: number, month?: number): number {
+  const base = activeTeam().filter((m) => m.has_target === 1).length;
+  if (!year || !month) return base;
+  const y = String(year);
+  const m2 = mm(month);
+  let extra = 0;
+  for (const m of listTeam(true)) {
+    if (m.has_target !== 1 || m.active === 1) continue;
+    const c = db().getFirstSync<{ n: number }>(
+      `SELECT (SELECT COUNT(*) FROM closing_transactions WHERE deleted_at IS NULL AND advisor_id=? AND strftime('%Y',date)=? AND strftime('%m',date)=?)
+            + (SELECT COUNT(*) FROM daily_production WHERE deleted_at IS NULL AND advisor_id=? AND strftime('%Y',date)=? AND strftime('%m',date)=?
+               AND (leads>0 OR appointment>0 OR show>0 OR interview>0)) AS n`,
+      [m.id, y, m2, m.id, y, m2],
+    );
+    if ((c?.n ?? 0) > 0) extra++;
+  }
+  return base + extra;
 }
 
 export function getSelectedTargetProducts(year?: number, month?: number): Product[] {
@@ -248,8 +266,13 @@ export interface TargetUnitDetails {
   unitOptions: { product: Product; units: number }[];
 }
 
-export function calculateTargetUnitDetails(duesTarget: number, selectedProducts: Product[]): TargetUnitDetails {
-  const count = membersWithTargetCount();
+export function calculateTargetUnitDetails(
+  duesTarget: number,
+  selectedProducts: Product[],
+  year?: number,
+  month?: number,
+): TargetUnitDetails {
+  const count = membersWithTargetCount(year, month);
   if (!selectedProducts || selectedProducts.length === 0 || duesTarget <= 0) {
     return {
       selectedProducts: selectedProducts || [],
@@ -298,13 +321,13 @@ export interface TargetInfo {
 
 export function targetInfo(year: number, month: number): TargetInfo {
   const t = getTarget(year, month);
-  const count = membersWithTargetCount();
+  const count = membersWithTargetCount(year, month);
   const dues = t?.dues_target ?? 0;
   const priv = t?.private_target ?? 0;
   const academy = dues > 0 || priv > 0 ? dues + priv : (t?.academy_target ?? 0);
 
   const selectedProducts = getSelectedTargetProducts(year, month);
-  const unitCalc = calculateTargetUnitDetails(dues, selectedProducts);
+  const unitCalc = calculateTargetUnitDetails(dues, selectedProducts, year, month);
 
   const personalDues = count > 0 ? Math.round(dues / count) : 0;
   const personalPriv = count > 0 ? Math.round(priv / count) : 0;
@@ -421,7 +444,7 @@ export function calculateFunnelRequirements(
   const elapsed = elapsedDays(year, month);
   const daysRemaining = Math.max(1, totalDays - elapsed);
 
-  const advisorCount = Math.max(1, membersWithTargetCount());
+  const advisorCount = Math.max(1, membersWithTargetCount(year, month));
 
   const suggestions: FunnelSuggestion[] = [];
 
