@@ -9,6 +9,28 @@ import { ProductionScreen } from "@/src/screens/ProductionScreen";
 import { ClosingScreen } from "@/src/screens/ClosingScreen";
 import { MoreScreen } from "@/src/screens/MoreScreen";
 
+function PersistWarning() {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const onStatus = (e: Event) => {
+      const ok = (e as CustomEvent).detail?.ok !== false;
+      setFailed(!ok);
+    };
+    window.addEventListener("sa-persist-status", onStatus);
+    return () => window.removeEventListener("sa-persist-status", onStatus);
+  }, []);
+  if (!failed) return null;
+  return (
+    <div
+      role="alert"
+      data-testid="persist-warning"
+      className="fixed top-0 inset-x-0 z-[100] bg-rose-600 text-white text-xs font-bold text-center px-3 py-2"
+    >
+      Data gagal disimpan di HP. Segera ekspor Backup dari menu Data, lalu tutup dan buka lagi aplikasi.
+    </div>
+  );
+}
+
 function DbGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +91,12 @@ function DbGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <PersistWarning />
+      {children}
+    </>
+  );
 }
 
 export default function App() {

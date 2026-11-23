@@ -1,10 +1,16 @@
 
 import { nowISO } from "@/src/lib/date";
 import { MIGRATIONS, SCHEMA_VERSION } from "./schema";
+import {
+  configurePersist,
+  flushNow,
+  loadStoredCandidates,
+  requestPersist,
+  requestStoragePersistence,
+  verifyIdb,
+} from "./storage";
 
 export type SqlJsDatabase = any;
-
-const STORAGE_KEY = "sa_summary_db_v1";
 
 type Params = any[];
 
@@ -111,16 +117,7 @@ export class WebDb {
   }
 
   persist() {
-    try {
-      const data: Uint8Array = this.db.export();
-      let binary = "";
-      for (let i = 0; i < data.length; i++) {
-        binary += String.fromCharCode(data[i]);
-      }
-      window.localStorage.setItem(STORAGE_KEY, btoa(binary));
-    } catch (e) {
-      console.warn("Failed to persist database to localStorage", e);
-    }
+    requestPersist();
   }
 }
 
@@ -254,27 +251,48 @@ export async function initDatabase(): Promise<WebDb> {
     });
   }
 
-  let database: SqlJsDatabase;
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const binary = atob(saved);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      database = new SQL.Database(bytes);
-    } else {
-      database = new SQL.Database();
+  let database: SqlJsDatabase | null = null;
+  let loadedSavedAt = 0;
+  let loadedFrom: "idb" | "localStorage" | null = null;
+  let loadedLength = 0;
+  const stored = await loadStoredCandidates();
+  let failedCandidate = false;
+  for (const cand of stored.candidates) {
+    try {
+      const candidateDb = new SQL.Database(cand.bytes);
+      candidateDb.exec("SELECT count(*) FROM sqlite_master");
+      database = candidateDb;
+      loadedSavedAt = cand.savedAt;
+      loadedFrom = cand.source;
+      loadedLength = cand.bytes.length;
+      break;
+    } catch (e) {
+      failedCandidate = true;
+      console.warn(`Data tersimpan (${cand.source}) tidak bisa dibuka`, e);
     }
-  } catch (e) {
-    console.warn("Error restoring saved database from localStorage, initializing fresh", e);
+  }
+  if (!database) {
+    if (stored.unreadable || failedCandidate) {
+      // Jangan memulai database kosong: itu akan menimpa data lama yang rusak/terbaca sebagian.
+      throw new Error(
+        "Data tersimpan tidak dapat dibaca. Data lama belum ditimpa. Tutup aplikasi lalu buka lagi; bila tetap gagal, jangan hapus data aplikasi dan hubungi pengelola.",
+      );
+    }
     database = new SQL.Database();
   }
 
   database.run("PRAGMA foreign_keys = ON;");
   _db = new WebDb(database);
+  configurePersist(() => _db!.exportBinary(), loadedSavedAt);
   runMigrations();
   seedIfEmpty();
+  // Tulis ke IndexedDB sekarang (juga memindahkan data lama dari localStorage), lalu cek hasilnya.
+  requestPersist();
+  await flushNow();
+  if (loadedFrom === "localStorage") {
+    const ok = await verifyIdb(_db.exportBinary().length).catch(() => false);
+    if (!ok) console.warn("Verifikasi IndexedDB setelah migrasi belum cocok; cermin localStorage tetap dipakai.");
+  }
+  void requestStoragePersistence();
   return _db;
 }
