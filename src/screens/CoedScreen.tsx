@@ -18,6 +18,7 @@ import {
   addCoed,
   getCoedByDate,
   listCoed,
+  restoreCoed,
   saveCoedBatchForDate,
   softDeleteCoed,
   updateCoed,
@@ -26,6 +27,7 @@ import { coedTotals } from "@/src/services/calc";
 import { CoedCategory, COED_CATEGORIES, CoedEntry } from "@/src/types";
 import { currentYM, displayDate, monthStart, todayYMD } from "@/src/lib/date";
 import { formatRupiah } from "@/src/lib/format";
+import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
 
 const catLabel = (c: CoedCategory) =>
   COED_CATEGORIES.find((x) => x.key === c)?.label ?? c;
@@ -50,6 +52,12 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     return monthStart(year, month);
   };
 
+  const swipeHandlers = useMonthSwipe({
+    year,
+    month,
+    onChange: (y, m) => setYM({ year: y, month: m }),
+  });
+
   const handleDelete = async (id: number) => {
     const ok = await confirm({
       title: "Hapus entri COED?",
@@ -59,7 +67,16 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     if (!ok) return;
     softDeleteCoed(id);
     setRefreshKey((k) => k + 1);
-    showToast("Entri dihapus", "success");
+    showToast("Dihapus", "success", {
+      duration: 5000,
+      action: {
+        label: "Urungkan",
+        onClick: () => {
+          restoreCoed(id);
+          setRefreshKey((k) => k + 1);
+        },
+      },
+    });
   };
 
   const openBatch = (date?: string) => {
@@ -68,7 +85,10 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div
+      className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      {...swipeHandlers}
+    >
       <Header title="COED" subtitle="Collection & Earnings Data" onBack={onBack} />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-3">
@@ -90,7 +110,7 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             type="button"
             data-testid="coed-batch-open-btn"
             onClick={() => openBatch()}
-            className="px-3 py-2 rounded-xl bg-[#00A3A6] hover:bg-[#008F91] text-white text-xs font-bold shrink-0 shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+            className="min-h-[44px] px-3 py-2 rounded-xl bg-[#00A3A6] hover:bg-[#008F91] text-white text-xs font-bold shrink-0 shadow-xs active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <Plus size={14} weight="bold" />
             <span>Input Semua</span>
@@ -113,7 +133,7 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <button
             type="button"
             onClick={() => setIsAddingSingle(true)}
-            className="text-xs text-[#00A3A6] dark:text-[#38D9D9] font-semibold hover:underline cursor-pointer"
+            className="min-h-[44px] px-2 inline-flex items-center text-xs text-[#00A3A6] dark:text-[#38D9D9] font-semibold hover:underline cursor-pointer"
           >
             + Entri Satuan
           </button>
@@ -137,7 +157,7 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <button
                       type="button"
                       onClick={() => openBatch(e.date)}
-                      className="text-[10px] text-teal-600 dark:text-teal-400 hover:underline cursor-pointer font-medium"
+                      className="min-h-[44px] px-1.5 inline-flex items-center text-[10px] text-teal-600 dark:text-teal-400 hover:underline cursor-pointer font-medium"
                       title="Buka semua kategori pada tanggal ini"
                     >
                       (Edit Tanggal Ini)
@@ -152,7 +172,8 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     type="button"
                     data-testid={`coed-edit-${e.id}`}
                     onClick={() => setEditing(e)}
-                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1E202B] text-slate-900 dark:text-[#38D9D9] hover:opacity-80 cursor-pointer"
+                    aria-label="Edit entri"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-slate-100 dark:bg-[#1E202B] text-slate-900 dark:text-[#38D9D9] hover:opacity-80 cursor-pointer"
                     title="Edit entri"
                   >
                     <PencilSimple size={16} />
@@ -161,7 +182,8 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     type="button"
                     data-testid={`coed-delete-${e.id}`}
                     onClick={() => handleDelete(e.id)}
-                    className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-[#DC2626] dark:text-[#EF4444] hover:opacity-80 cursor-pointer"
+                    aria-label="Hapus entri"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-950/40 text-[#DC2626] dark:text-[#EF4444] hover:opacity-80 cursor-pointer"
                     title="Hapus entri"
                   >
                     <Trash size={16} />
@@ -173,12 +195,13 @@ export const CoedScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         )}
       </main>
 
-      <div className="fixed bottom-20 right-4 sm:right-auto sm:left-1/2 sm:translate-x-36 z-40">
+      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 sm:right-auto sm:left-1/2 sm:translate-x-36 z-40">
         <button
           type="button"
           data-testid="coed-add-fab"
           onClick={() => openBatch()}
-          className="w-13 h-13 rounded-full bg-[#00A3A6] hover:bg-[#008F91] text-white font-black flex items-center justify-center shadow-lg shadow-[#00A3A6]/30 active:scale-95 transition-all cursor-pointer"
+          aria-label="Input COED"
+          className="w-14 h-14 rounded-full bg-[#00A3A6] hover:bg-[#008F91] text-white font-black flex items-center justify-center shadow-lg shadow-[#00A3A6]/30 active:scale-95 transition-all cursor-pointer"
           title="Input COED"
         >
           <Plus size={24} weight="bold" />
@@ -342,7 +365,7 @@ function CoedBatchModal({
           <button
             type="button"
             onClick={onSwitchToSingle}
-            className="text-teal-600 dark:text-teal-400 hover:underline cursor-pointer"
+            className="min-h-[44px] px-2 inline-flex items-center text-teal-600 dark:text-teal-400 hover:underline cursor-pointer"
           >
             Mode Satuan
           </button>

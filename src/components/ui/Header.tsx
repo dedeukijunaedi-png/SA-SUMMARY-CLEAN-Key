@@ -21,13 +21,14 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`sticky top-0 z-30 bg-white/90 dark:bg-[#111116]/90 backdrop-blur-md border-b border-slate-200 dark:border-[#242533] px-4 py-2.5 flex items-center justify-between transition-colors ${className}`}
+      className={`sticky top-0 z-30 bg-white/90 dark:bg-[#111116]/90 backdrop-blur-md border-b border-slate-200 dark:border-[#242533] px-4 pb-2.5 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] flex items-center justify-between transition-colors ${className}`}
     >
       <div className="flex items-center gap-2.5">
         {onBack ? (
           <button
+            type="button"
             onClick={onBack}
-            className="p-1.5 -ml-1 rounded-xl hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+            className="min-w-[44px] min-h-[44px] -ml-2 rounded-xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
             aria-label="Kembali"
           >
             <CaretLeft size={22} weight="bold" />
@@ -67,8 +68,9 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-1.5">
         {showThemeToggle && (
           <button
+            type="button"
             onClick={() => setTheme(activeTheme === "dark" ? "light" : "dark")}
-            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1E202B] transition-colors cursor-pointer"
+            className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1E202B] transition-colors cursor-pointer"
             title={activeTheme === "dark" ? "Beralih ke tema terang" : "Beralih ke tema gelap"}
           >
             {activeTheme === "dark" ? (

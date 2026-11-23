@@ -143,7 +143,7 @@ export const MoreScreen: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <Header title="Lainnya" subtitle="Manajemen & laporan" />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-4">
@@ -158,9 +158,10 @@ export const MoreScreen: React.FC = () => {
                 return (
                   <button
                     key={it.testID}
+                    type="button"
                     data-testid={it.testID}
                     onClick={() => setSubView(it.view)}
-                    className="w-full flex items-center gap-3.5 p-3.5 hover:bg-slate-50 dark:hover:bg-[#1E202B]/60 transition-colors text-left cursor-pointer"
+                    className="min-h-[44px] w-full flex items-center gap-3.5 p-3.5 hover:bg-slate-50 dark:hover:bg-[#1E202B]/60 transition-colors text-left cursor-pointer"
                   >
                     <div className="w-10 h-10 rounded-xl bg-[#00A3A6]/15 dark:bg-[#00A3A6]/20 text-[#00A3A6] dark:text-[#38D9D9] flex items-center justify-center shrink-0">
                       <IconComponent size={22} weight="fill" />

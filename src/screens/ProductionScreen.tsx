@@ -14,6 +14,7 @@ import {
 } from "@/src/db/repo";
 import { currentYM, todayYMD, ymOf, displayDate } from "@/src/lib/date";
 import { formatInt } from "@/src/lib/format";
+import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
 
 type ProductionTab = "input" | "sa";
 
@@ -123,8 +124,18 @@ export const ProductionScreen: React.FC = () => {
     ...activeMembers.map((m) => ({ label: m.name, value: m.id })),
   ];
 
+  const swipeHandlers = useMonthSwipe({
+    year: saYear,
+    month: saMonth,
+    onChange: (y, m) => setSaYM({ year: y, month: m }),
+    enabled: activeTab === "sa",
+  });
+
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div
+      className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      {...swipeHandlers}
+    >
       <Header title="Daily Production" subtitle="Input produksi harian team" />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-3">
@@ -133,7 +144,7 @@ export const ProductionScreen: React.FC = () => {
             type="button"
             data-testid="production-tab-input"
             onClick={() => setActiveTab("input")}
-            className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`min-h-[44px] py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "input"
                 ? "bg-white dark:bg-[#202230] text-[#00A3A6] dark:text-[#38D9D9] shadow-sm font-black"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -146,7 +157,7 @@ export const ProductionScreen: React.FC = () => {
             type="button"
             data-testid="production-tab-sa"
             onClick={() => setActiveTab("sa")}
-            className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`min-h-[44px] py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "sa"
                 ? "bg-white dark:bg-[#202230] text-[#00A3A6] dark:text-[#38D9D9] shadow-sm font-black"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -278,7 +289,7 @@ export const ProductionScreen: React.FC = () => {
                         type="button"
                         data-testid={`sa-active-row-${m.id}`}
                         onClick={() => setSelectedSaId(isSelected ? null : m.id)}
-                        className={`w-full text-left py-2.5 first:pt-0 last:pb-0 flex flex-col gap-1.5 rounded-lg transition-colors cursor-pointer ${
+                        className={`min-h-[44px] w-full text-left py-2.5 first:pt-0 last:pb-0 flex flex-col gap-1.5 rounded-lg transition-colors cursor-pointer ${
                           isSelected ? "bg-teal-50/70 dark:bg-[#132225]/70 px-2 -mx-2" : ""
                         }`}
                       >

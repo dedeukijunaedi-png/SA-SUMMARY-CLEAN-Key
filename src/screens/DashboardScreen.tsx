@@ -20,6 +20,7 @@ import { currentYM } from "@/src/lib/date";
 import { formatCompactRupiah, formatInt, formatRupiah } from "@/src/lib/format";
 import { MemberDetailModal } from "./MemberDetailModal";
 import { AnalyticsView } from "@/src/components/analytics/AnalyticsView";
+import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
 
 const COMPACT_STORAGE_KEY = "sa_dashboard_compact";
 
@@ -51,8 +52,17 @@ export const DashboardScreen: React.FC = () => {
   const targetUnit = d.targetUnit;
   const avgPrice = d.target.avgPrice;
 
+  const swipeHandlers = useMonthSwipe({
+    year,
+    month,
+    onChange: (y, m) => setYM({ year: y, month: m }),
+  });
+
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div
+      className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      {...swipeHandlers}
+    >
       <Header title="SA Summary" subtitle="Rockstar Academy · Performance Command Center" />
 
       <main
@@ -72,7 +82,7 @@ export const DashboardScreen: React.FC = () => {
               type="button"
               data-testid="tab-summary"
               onClick={() => setActiveTab("summary")}
-              className={`flex items-center justify-center gap-1.5 font-bold transition-all cursor-pointer ${
+              className={`min-h-[44px] flex items-center justify-center gap-1.5 font-bold transition-all cursor-pointer ${
                 compact ? "py-1.5 px-2 rounded-lg text-[11px]" : "py-2 px-3 rounded-xl text-xs"
               } ${
                 activeTab === "summary"
@@ -87,7 +97,7 @@ export const DashboardScreen: React.FC = () => {
               type="button"
               data-testid="tab-analytics"
               onClick={() => setActiveTab("analytics")}
-              className={`flex items-center justify-center gap-1.5 font-bold transition-all cursor-pointer ${
+              className={`min-h-[44px] flex items-center justify-center gap-1.5 font-bold transition-all cursor-pointer ${
                 compact ? "py-1.5 px-2 rounded-lg text-[11px]" : "py-2 px-3 rounded-xl text-xs"
               } ${
                 activeTab === "analytics"
@@ -106,7 +116,7 @@ export const DashboardScreen: React.FC = () => {
             aria-pressed={compact}
             onClick={toggleCompact}
             title={compact ? "Nonaktifkan Compact Mode" : "Aktifkan Compact Mode untuk layar kecil"}
-            className={`shrink-0 flex items-center gap-1 font-bold border transition-all cursor-pointer shadow-xs ${
+            className={`min-h-[44px] shrink-0 flex items-center gap-1 font-bold border transition-all cursor-pointer shadow-xs ${
               compact
                 ? "py-2 px-2.5 rounded-xl text-[11px] bg-[#00A3A6]/15 text-[#00A3A6] dark:text-[#38D9D9] border-[#00A3A6]/40"
                 : "py-2.5 px-3 rounded-2xl text-xs bg-white dark:bg-[#161722] text-slate-600 dark:text-slate-300 border-slate-200/90 dark:border-[#282A3A] hover:border-[#00A3A6]/40"

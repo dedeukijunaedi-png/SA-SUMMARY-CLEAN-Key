@@ -17,15 +17,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onChangeTab })
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#111116]/95 backdrop-blur-lg border-t border-slate-200 dark:border-[#242533] px-2 py-1.5 transition-colors">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#111116]/95 backdrop-blur-lg border-t border-slate-200 dark:border-[#242533] px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom,0px))] transition-colors">
       <div className="max-w-md mx-auto grid grid-cols-4 gap-1">
         {tabs.map(({ id, label, Icon }) => {
           const isActive = currentTab === id;
           return (
             <button
               key={id}
+              type="button"
               onClick={() => onChangeTab(id)}
-              className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer ${
+              className={`min-h-[44px] flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer ${
                 isActive
                   ? "text-[#00A3A6] dark:text-[#38D9D9] font-black bg-[#00A3A6]/15 dark:bg-[#00A3A6]/20 shadow-2xs"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium"

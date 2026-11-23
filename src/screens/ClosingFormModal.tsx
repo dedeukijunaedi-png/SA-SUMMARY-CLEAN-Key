@@ -185,14 +185,14 @@ export const ClosingFormModal: React.FC<ClosingFormModalProps> = ({
             <button
               type="button"
               onClick={addDues}
-              className="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#00A3A6]/15 text-[#00A3A6] dark:text-[#38D9D9] border border-[#00A3A6]/30 hover:opacity-80 transition-opacity flex items-center gap-1 cursor-pointer"
+              className="min-h-[44px] text-xs font-bold px-3 py-1.5 rounded-lg bg-[#00A3A6]/15 text-[#00A3A6] dark:text-[#38D9D9] border border-[#00A3A6]/30 hover:opacity-80 transition-opacity flex items-center gap-1 cursor-pointer"
             >
               <Plus size={12} weight="bold" /> + Dues
             </button>
             <button
               type="button"
               onClick={addPrivate}
-              className="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#FF6B35]/15 text-[#FF6B35] dark:text-[#FF8C61] border border-[#FF6B35]/30 hover:opacity-80 transition-opacity flex items-center gap-1 cursor-pointer"
+              className="min-h-[44px] text-xs font-bold px-3 py-1.5 rounded-lg bg-[#FF6B35]/15 text-[#FF6B35] dark:text-[#FF8C61] border border-[#FF6B35]/30 hover:opacity-80 transition-opacity flex items-center gap-1 cursor-pointer"
             >
               <Plus size={12} weight="bold" /> + Private
             </button>
@@ -214,7 +214,8 @@ export const ClosingFormModal: React.FC<ClosingFormModalProps> = ({
                   type="button"
                   data-testid={`item-remove-${idx}`}
                   onClick={() => removeItem(it.key)}
-                  className="text-rose-500 hover:text-rose-700 p-1"
+                  aria-label="Hapus item"
+                  className="min-w-[44px] min-h-[44px] -mr-1.5 flex items-center justify-center rounded-lg text-rose-500 hover:text-rose-700 cursor-pointer"
                 >
                   <Trash size={16} />
                 </button>

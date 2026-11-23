@@ -57,7 +57,8 @@ export const ProductsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
                 type="button"
                 data-testid={`product-edit-${p.id}`}
                 onClick={() => setEditing(p)}
-                className="p-2 rounded-xl bg-[#00A3A6]/15 text-[#00A3A6] dark:text-[#38D9D9] hover:opacity-80 transition-opacity cursor-pointer"
+                aria-label="Edit produk"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-[#00A3A6]/15 text-[#00A3A6] dark:text-[#38D9D9] hover:opacity-80 transition-opacity cursor-pointer"
               >
                 <PencilSimple size={16} />
               </button>
@@ -74,7 +75,7 @@ export const ProductsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
   );
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <Header title="Products" subtitle="Dues & Private" onBack={onBack} />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-2">
@@ -82,12 +83,13 @@ export const ProductsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
         {renderGroup("Private Training", priv)}
       </main>
 
-      <div className="fixed bottom-20 right-4 sm:right-auto sm:left-1/2 sm:translate-x-36 z-40">
+      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 sm:right-auto sm:left-1/2 sm:translate-x-36 z-40">
         <button
           type="button"
           data-testid="product-add-fab"
           onClick={() => setIsAdding(true)}
-          className="w-13 h-13 rounded-full bg-[#00A3A6] hover:bg-[#008F91] text-white font-black flex items-center justify-center shadow-lg shadow-[#00A3A6]/30 active:scale-95 transition-all cursor-pointer"
+          aria-label="Tambah Produk Baru"
+          className="w-14 h-14 rounded-full bg-[#00A3A6] hover:bg-[#008F91] text-white font-black flex items-center justify-center shadow-lg shadow-[#00A3A6]/30 active:scale-95 transition-all cursor-pointer"
           title="Tambah Produk Baru"
         >
           <Plus size={24} weight="bold" />

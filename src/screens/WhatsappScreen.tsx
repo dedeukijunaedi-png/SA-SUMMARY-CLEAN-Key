@@ -4,7 +4,7 @@ import { WhatsappReportView } from "@/src/components/reports/WhatsappReportView"
 
 export const WhatsappScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <Header
         title="WhatsApp Report"
         subtitle="Laporan 1PM • 5PM • 9/10PM siap copy"

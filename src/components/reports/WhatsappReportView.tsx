@@ -143,7 +143,7 @@ export const WhatsappReportView: React.FC<Props> = ({ initialDate }) => {
                 key={slot}
                 type="button"
                 onClick={() => handleSlotChange(slot)}
-                className={`py-2 px-1 text-xs font-black rounded-lg transition-all flex flex-col items-center justify-center cursor-pointer ${
+                className={`min-h-[44px] py-2 px-1 text-xs font-black rounded-lg transition-all flex flex-col items-center justify-center cursor-pointer ${
                   active
                     ? "bg-[#00A3A6] text-white shadow-md shadow-[#00A3A6]/30 scale-[1.02]"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -180,8 +180,16 @@ export const WhatsappReportView: React.FC<Props> = ({ initialDate }) => {
 
       <Card className="p-3.5 border-slate-200 dark:border-slate-800">
         <div
-          className="flex items-center justify-between cursor-pointer"
+          role="button"
+          tabIndex={0}
+          className="min-h-[44px] flex items-center justify-between cursor-pointer"
           onClick={() => setShowManualForm(!showManualForm)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setShowManualForm(!showManualForm);
+            }
+          }}
         >
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={16} className="text-[#00A3A6]" weight="bold" />
@@ -282,7 +290,7 @@ export const WhatsappReportView: React.FC<Props> = ({ initialDate }) => {
           type="button"
           onClick={handleCopy}
           data-testid="wa-copy-btn"
-          className="w-full py-3 px-4 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] cursor-pointer bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30"
+          className="min-h-[44px] w-full py-3 px-4 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] cursor-pointer bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/30"
         >
           {copied ? (
             <>
@@ -301,7 +309,7 @@ export const WhatsappReportView: React.FC<Props> = ({ initialDate }) => {
           href={`https://api.whatsapp.com/send?text=${encodeURIComponent(previewText)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full py-2.5 px-3 rounded-xl font-bold text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors"
+          className="min-h-[44px] w-full py-2.5 px-3 rounded-xl font-bold text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors"
         >
           <PaperPlaneTilt size={16} weight="bold" />
           <span>Buka di WhatsApp Web / App Langsung</span>

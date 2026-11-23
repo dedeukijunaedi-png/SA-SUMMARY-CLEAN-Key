@@ -193,6 +193,10 @@ export function softDeleteClosing(id: number) {
   db().runSync("UPDATE closing_transactions SET deleted_at = ?, updated_at = ? WHERE id = ?", [nowISO(), nowISO(), id]);
 }
 
+export function restoreClosing(id: number) {
+  db().runSync("UPDATE closing_transactions SET deleted_at = NULL, updated_at = ? WHERE id = ? AND deleted_at IS NOT NULL", [nowISO(), id]);
+}
+
 export interface ClosingWithItems extends ClosingTransaction {
   advisor_name: string;
   items: ClosingItem[];
@@ -344,6 +348,10 @@ export function softDeleteCoed(id: number) {
   db().runSync("UPDATE coed_entries SET deleted_at = ?, updated_at = ? WHERE id = ?", [nowISO(), nowISO(), id]);
 }
 
+export function restoreCoed(id: number) {
+  db().runSync("UPDATE coed_entries SET deleted_at = NULL, updated_at = ? WHERE id = ? AND deleted_at IS NOT NULL", [nowISO(), id]);
+}
+
 export function listCancellation(year: number, month: number, advisorId?: number): (CancellationEntry & { advisor_name: string })[] {
   const conds = ["c.deleted_at IS NULL", "strftime('%Y', c.date) = ?", "strftime('%m', c.date) = ?"];
   const args: any[] = [String(year), String(month).padStart(2, "0")];
@@ -374,6 +382,10 @@ export function updateCancellation(id: number, date: string, advisorId: number, 
 
 export function softDeleteCancellation(id: number) {
   db().runSync("UPDATE cancellation_entries SET deleted_at = ?, updated_at = ? WHERE id = ?", [nowISO(), nowISO(), id]);
+}
+
+export function restoreCancellation(id: number) {
+  db().runSync("UPDATE cancellation_entries SET deleted_at = NULL, updated_at = ? WHERE id = ? AND deleted_at IS NOT NULL", [nowISO(), id]);
 }
 
 export function getWaReport(date: string): WhatsappReport | null {

@@ -95,7 +95,7 @@ export const DataScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <Header title="Import / Export" subtitle="Backup & restore JSON" onBack={onBack} />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-3">
@@ -192,7 +192,7 @@ export const DataScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     type="button"
                     data-testid="mode-merge"
                     onClick={() => setMode("merge")}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    className={`min-h-[44px] py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       mode === "merge"
                         ? "bg-[#00A3A6] text-white border-[#00A3A6]"
                         : "bg-white dark:bg-[#161722] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-[#282A3A]"
@@ -204,7 +204,7 @@ export const DataScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     type="button"
                     data-testid="mode-replace"
                     onClick={() => setMode("replace")}
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                    className={`min-h-[44px] py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                       mode === "replace"
                         ? "bg-[#DC2626] text-white border-[#DC2626]"
                         : "bg-white dark:bg-[#1E1E1E] text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700"

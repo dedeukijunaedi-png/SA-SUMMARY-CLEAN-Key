@@ -10,6 +10,7 @@ import {
   addCancellation,
   listCancellation,
   listTeam,
+  restoreCancellation,
   softDeleteCancellation,
   updateCancellation,
 } from "@/src/db/repo";
@@ -17,6 +18,7 @@ import { cancellationCount } from "@/src/services/calc";
 import { CancellationEntry, TeamMember } from "@/src/types";
 import { currentYM, displayDate, monthStart, todayYMD } from "@/src/lib/date";
 import { formatInt } from "@/src/lib/format";
+import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
 
 export const CancellationScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const { confirm, showToast } = useToast();
@@ -36,6 +38,12 @@ export const CancellationScreen: React.FC<{ onBack: () => void }> = ({ onBack })
     .map((t) => ({ name: t.name, count: cancellationCount(year, month, t.id) }))
     .filter((x) => x.count > 0);
 
+  const swipeHandlers = useMonthSwipe({
+    year,
+    month,
+    onChange: (y, m) => setYM({ year: y, month: m }),
+  });
+
   const handleDelete = async (id: number) => {
     const ok = await confirm({
       title: "Hapus cancellation?",
@@ -45,7 +53,16 @@ export const CancellationScreen: React.FC<{ onBack: () => void }> = ({ onBack })
     if (!ok) return;
     softDeleteCancellation(id);
     setRefreshKey((k) => k + 1);
-    showToast("Dihapus", "success");
+    showToast("Dihapus", "success", {
+      duration: 5000,
+      action: {
+        label: "Urungkan",
+        onClick: () => {
+          restoreCancellation(id);
+          setRefreshKey((k) => k + 1);
+        },
+      },
+    });
   };
 
   const teamOptions = [
@@ -54,7 +71,10 @@ export const CancellationScreen: React.FC<{ onBack: () => void }> = ({ onBack })
   ];
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div
+      className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      {...swipeHandlers}
+    >
       <Header title="Cancellation" subtitle="Catatan pembatalan" onBack={onBack} />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-3">
@@ -116,7 +136,8 @@ export const CancellationScreen: React.FC<{ onBack: () => void }> = ({ onBack })
                     type="button"
                     data-testid={`cancel-edit-${e.id}`}
                     onClick={() => setEditing(e)}
-                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-[#1E202B] text-slate-900 dark:text-[#38D9D9] hover:opacity-80 cursor-pointer"
+                    aria-label="Edit cancellation"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-slate-100 dark:bg-[#1E202B] text-slate-900 dark:text-[#38D9D9] hover:opacity-80 cursor-pointer"
                   >
                     <PencilSimple size={16} />
                   </button>
@@ -124,7 +145,8 @@ export const CancellationScreen: React.FC<{ onBack: () => void }> = ({ onBack })
                     type="button"
                     data-testid={`cancel-delete-${e.id}`}
                     onClick={() => handleDelete(e.id)}
-                    className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-[#DC2626] dark:text-[#EF4444] hover:opacity-80 cursor-pointer"
+                    aria-label="Hapus cancellation"
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-950/40 text-[#DC2626] dark:text-[#EF4444] hover:opacity-80 cursor-pointer"
                   >
                     <Trash size={16} />
                   </button>
@@ -135,12 +157,13 @@ export const CancellationScreen: React.FC<{ onBack: () => void }> = ({ onBack })
         )}
       </main>
 
-      <div className="fixed bottom-20 right-4 sm:right-auto sm:left-1/2 sm:translate-x-36 z-40">
+      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 sm:right-auto sm:left-1/2 sm:translate-x-36 z-40">
         <button
           type="button"
           data-testid="cancel-add-fab"
           onClick={() => setIsAdding(true)}
-          className="w-13 h-13 rounded-full bg-[#00A3A6] hover:bg-[#008F91] text-white font-black flex items-center justify-center shadow-lg shadow-[#00A3A6]/30 active:scale-95 transition-all cursor-pointer"
+          aria-label="Tambah Cancellation"
+          className="w-14 h-14 rounded-full bg-[#00A3A6] hover:bg-[#008F91] text-white font-black flex items-center justify-center shadow-lg shadow-[#00A3A6]/30 active:scale-95 transition-all cursor-pointer"
           title="Tambah Cancellation"
         >
           <Plus size={24} weight="bold" />

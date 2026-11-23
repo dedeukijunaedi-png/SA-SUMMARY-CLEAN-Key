@@ -14,6 +14,7 @@ import {
 } from "@/src/services/calc";
 import { currentYM, monthLabel } from "@/src/lib/date";
 import { formatInt, formatRupiah } from "@/src/lib/format";
+import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
 import { Product } from "@/src/types";
 
 export const TargetsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
@@ -80,8 +81,17 @@ export const TargetsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     showToast(`Target ${monthLabel(year, month)} tersimpan: Dues ${formatRupiah(dues)} · Priv ${formatRupiah(priv)}`, "success");
   };
 
+  const swipeHandlers = useMonthSwipe({
+    year,
+    month,
+    onChange: (y, m) => setYM({ year: y, month: m }),
+  });
+
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div
+      className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      {...swipeHandlers}
+    >
       <Header title="Target Management" subtitle="Target Akademi & Target per SA" onBack={onBack} />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-3">
@@ -176,8 +186,16 @@ export const TargetsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               return (
                 <div
                   key={p.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleToggleProduct(p.id)}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleToggleProduct(p.id);
+                    }
+                  }}
+                  className={`min-h-[44px] flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
                     isSelected
                       ? "border-[#00A3A6] bg-[#00A3A6]/10 dark:bg-[#00A3A6]/15 text-slate-900 dark:text-white font-bold"
                       : "border-slate-200 dark:border-[#282A3A] hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300"

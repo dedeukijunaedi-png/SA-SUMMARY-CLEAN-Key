@@ -1,6 +1,25 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { CaretLeft, CaretRight, Plus, Minus, Spinner, Calendar } from "@phosphor-icons/react";
 import { monthLabel } from "@/src/lib/date";
+
+function selectAllOnFocus(e: React.FocusEvent<HTMLInputElement>) {
+  const el = e.currentTarget;
+  const initial = el.value;
+  try {
+    el.select();
+  } catch {
+    // abaikan
+  }
+  requestAnimationFrame(() => {
+    try {
+      if (document.activeElement === el && el.value === initial) {
+        el.select();
+      }
+    } catch {
+      // abaikan
+    }
+  });
+}
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   title?: string;
@@ -22,7 +41,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const base =
-    "inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
+    "min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-xs active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
   const variants = {
     primary:
       "bg-[#00A3A6] hover:bg-[#008F91] text-white font-extrabold shadow-sm shadow-[#00A3A6]/25 dark:bg-[#00A3A6] dark:hover:bg-[#008F91] dark:text-white",
@@ -67,13 +86,13 @@ export const MonthNavigator: React.FC<{
 
   return (
     <div
-      className={`flex items-center justify-between bg-white dark:bg-[#161722] border border-slate-200 dark:border-[#282A3A] rounded-2xl px-3 py-2 shadow-xs ${className}`}
+      className={`flex items-center justify-between bg-white dark:bg-[#161722] border border-slate-200 dark:border-[#282A3A] rounded-2xl px-1.5 py-1 shadow-xs ${className}`}
     >
       <button
         type="button"
         onClick={prev}
         aria-label="Bulan sebelumnya"
-        className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+        className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
       >
         <CaretLeft size={18} weight="bold" />
       </button>
@@ -87,7 +106,7 @@ export const MonthNavigator: React.FC<{
         type="button"
         onClick={next}
         aria-label="Bulan berikutnya"
-        className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+        className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
       >
         <CaretRight size={18} weight="bold" />
       </button>
@@ -114,7 +133,7 @@ export const TextField: React.FC<{
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChangeText(e.target.value)}
-        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all placeholder:text-slate-400"
+        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all placeholder:text-slate-400"
       />
     </div>
   );
@@ -130,19 +149,23 @@ export const NumberField: React.FC<{
 }> = ({ label, value, onChange, placeholder, testID, className = "" }) => {
   return (
     <div className={`mb-3.5 ${className}`}>
-      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-        {label}
-      </label>
+      {label && (
+        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+          {label}
+        </label>
+      )}
       <input
         type="number"
+        inputMode="numeric"
         data-testid={testID}
         value={value === 0 ? "" : value}
         placeholder={placeholder ?? "0"}
+        onFocus={selectAllOnFocus}
         onChange={(e) => {
           const val = e.target.value === "" ? 0 : parseInt(e.target.value, 10);
           onChange(isNaN(val) ? 0 : val);
         }}
-        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all placeholder:text-slate-400"
+        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all placeholder:text-slate-400"
       />
     </div>
   );
@@ -165,7 +188,7 @@ export const DateField: React.FC<{
         data-testid={testID}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all"
+        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all"
       />
     </div>
   );
@@ -188,7 +211,7 @@ export const TimeField: React.FC<{
         data-testid={testID}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all"
+        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all"
       />
     </div>
   );
@@ -221,7 +244,7 @@ export const SelectField: React.FC<{
           const parsed = isNaN(Number(raw)) || raw === "" ? raw : Number(raw);
           onChange(parsed);
         }}
-        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all cursor-pointer"
+        className="w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#282A3A] bg-white dark:bg-[#161722] text-slate-900 dark:text-white text-sm focus:outline-hidden focus:ring-2 focus:ring-[#00A3A6]/40 dark:focus:ring-[#00A3A6]/30 focus:border-[#00A3A6] transition-all cursor-pointer"
       >
         {options.map((opt, i) => (
           <option key={i} value={opt.value}>
@@ -241,6 +264,21 @@ export const Stepper: React.FC<{
   testID?: string;
   className?: string;
 }> = ({ value, onChange, min = 1, max = 999, testID, className = "" }) => {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+
+  useEffect(() => {
+    if (!focused) {
+      setDraft(String(value));
+    }
+  }, [value, focused]);
+
+  const stepTo = (next: number) => {
+    const clamped = Math.min(max, Math.max(min, Math.trunc(next)));
+    setDraft(String(clamped));
+    onChange(clamped);
+  };
+
   return (
     <div
       data-testid={testID}
@@ -249,21 +287,52 @@ export const Stepper: React.FC<{
       <button
         type="button"
         disabled={value <= min}
-        onClick={() => onChange(Math.max(min, value - 1))}
-        className="px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+        onClick={() => stepTo(value - 1)}
+        aria-label="Kurangi"
+        className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
       >
-        <Minus size={14} weight="bold" />
+        <Minus size={15} weight="bold" />
       </button>
-      <span className="px-3 font-bold text-sm text-slate-900 dark:text-white min-w-[32px] text-center">
-        {value}
-      </span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={min}
+        max={max}
+        step={1}
+        aria-label="Jumlah"
+        value={draft}
+        onFocus={(e) => {
+          setFocused(true);
+          selectAllOnFocus(e);
+        }}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/[^0-9]/g, "");
+          setDraft(digits);
+          if (digits === "") return;
+          const parsed = parseInt(digits, 10);
+          if (!isNaN(parsed) && parsed >= min) {
+            onChange(Math.min(max, parsed));
+          }
+        }}
+        onBlur={() => {
+          setFocused(false);
+          const parsed = parseInt(draft, 10);
+          const next = isNaN(parsed) ? min : Math.min(max, Math.max(min, parsed));
+          setDraft(String(next));
+          if (next !== value) {
+            onChange(next);
+          }
+        }}
+        className="w-12 min-h-[44px] px-1 text-center font-bold text-sm text-slate-900 dark:text-white bg-transparent focus:outline-hidden focus:bg-slate-50 dark:focus:bg-[#1E202B] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      />
       <button
         type="button"
         disabled={value >= max}
-        onClick={() => onChange(Math.min(max, value + 1))}
-        className="px-2.5 py-2 hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+        onClick={() => stepTo(value + 1)}
+        aria-label="Tambah"
+        className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 dark:hover:bg-[#1E202B] text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
       >
-        <Plus size={14} weight="bold" />
+        <Plus size={15} weight="bold" />
       </button>
     </div>
   );
@@ -282,15 +351,19 @@ export const Switch: React.FC<{
       aria-checked={checked}
       data-testid={testID}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
-        checked ? "bg-[#00A3A6]" : "bg-slate-300 dark:bg-slate-700"
-      } ${className}`}
+      className={`min-w-[44px] min-h-[44px] inline-flex items-center justify-center shrink-0 cursor-pointer focus:outline-hidden ${className}`}
     >
       <span
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full ${
-          checked ? "bg-white translate-x-5 shadow-xs" : "bg-white translate-x-0 shadow-xs"
-        } ring-0 transition duration-200 ease-in-out`}
-      />
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+          checked ? "bg-[#00A3A6]" : "bg-slate-300 dark:bg-slate-700"
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full ${
+            checked ? "bg-white translate-x-5 shadow-xs" : "bg-white translate-x-0 shadow-xs"
+          } ring-0 transition duration-200 ease-in-out`}
+        />
+      </span>
     </button>
   );
 };

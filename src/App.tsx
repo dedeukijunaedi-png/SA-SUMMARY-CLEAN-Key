@@ -8,6 +8,7 @@ import { DashboardScreen } from "@/src/screens/DashboardScreen";
 import { ProductionScreen } from "@/src/screens/ProductionScreen";
 import { ClosingScreen } from "@/src/screens/ClosingScreen";
 import { MoreScreen } from "@/src/screens/MoreScreen";
+import { useKeyboardViewport } from "@/src/lib/useKeyboardViewport";
 
 function PersistWarning() {
   const [failed, setFailed] = useState(false);
@@ -24,7 +25,7 @@ function PersistWarning() {
     <div
       role="alert"
       data-testid="persist-warning"
-      className="fixed top-0 inset-x-0 z-[100] bg-rose-600 text-white text-xs font-bold text-center px-3 py-2"
+      className="fixed top-0 inset-x-0 z-[100] bg-rose-600 text-white text-xs font-bold text-center px-3 pb-2 pt-[calc(0.5rem+env(safe-area-inset-top,0px))]"
     >
       Data gagal disimpan di HP. Segera ekspor Backup dari menu Data, lalu tutup dan buka lagi aplikasi.
     </div>
@@ -101,6 +102,7 @@ function DbGate({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<TabId>("index");
+  const { isKeyboardOpen } = useKeyboardViewport();
 
   return (
     <ThemeProvider>
@@ -112,7 +114,7 @@ export default function App() {
             {currentTab === "closing" && <ClosingScreen />}
             {currentTab === "more" && <MoreScreen />}
 
-            <BottomNav currentTab={currentTab} onChangeTab={setCurrentTab} />
+            {!isKeyboardOpen && <BottomNav currentTab={currentTab} onChangeTab={setCurrentTab} />}
           </div>
         </DbGate>
       </ToastProvider>

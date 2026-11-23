@@ -17,7 +17,7 @@ export const SettingsScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => 
   ];
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       <Header title="Settings" subtitle="Tema & info aplikasi" onBack={onBack} />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-3">

@@ -15,10 +15,11 @@ import { Card } from "@/src/components/ui/Card";
 import { MonthNavigator, SelectField } from "@/src/components/ui/Inputs";
 import { EmptyState, StatusPill } from "@/src/components/ui/UIComponents";
 import { useToast } from "@/src/components/ui/Toast";
-import { listClosings, listTeam, softDeleteClosing, ClosingWithItems } from "@/src/db/repo";
+import { listClosings, listTeam, restoreClosing, softDeleteClosing, ClosingWithItems } from "@/src/db/repo";
 import { currentYM, displayDateTime } from "@/src/lib/date";
 import { formatInt, formatRupiah } from "@/src/lib/format";
 import { useAppTheme } from "@/src/lib/theme";
+import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
 import { ClosingFormModal } from "./ClosingFormModal";
 
 interface ProductSummaryRow {
@@ -118,6 +119,12 @@ export const ClosingScreen: React.FC = () => {
   const barTeal = "#00A3A6";
   const barPurple = "#8B5CF6";
 
+  const swipeHandlers = useMonthSwipe({
+    year,
+    month,
+    onChange: (y, m) => setYM({ year: y, month: m }),
+  });
+
   const handleDelete = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const ok = await confirm({
@@ -128,8 +135,17 @@ export const ClosingScreen: React.FC = () => {
     });
     if (!ok) return;
     softDeleteClosing(id);
-    showToast("Closing dihapus", "success");
     setRefreshKey((k) => k + 1);
+    showToast("Dihapus", "success", {
+      duration: 5000,
+      action: {
+        label: "Urungkan",
+        onClick: () => {
+          restoreClosing(id);
+          setRefreshKey((k) => k + 1);
+        },
+      },
+    });
   };
 
   const teamOptions = [
@@ -138,7 +154,10 @@ export const ClosingScreen: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div
+      className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      {...swipeHandlers}
+    >
       <Header title="Closing" subtitle="Catatan penjualan harian team" />
 
       <main className="max-w-md mx-auto w-full px-4 pt-3 flex flex-col gap-3">
@@ -433,9 +452,9 @@ export const ClosingScreen: React.FC = () => {
                       type="button"
                       data-testid={`closing-delete-${c.id}`}
                       onClick={(e) => handleDelete(c.id, e)}
-                      className="inline-flex items-center gap-1 text-[#DC2626] dark:text-[#EF4444] font-semibold hover:underline cursor-pointer"
+                      className="min-w-[44px] min-h-[44px] px-2 -mr-1 inline-flex items-center justify-center gap-1 text-[#DC2626] dark:text-[#EF4444] font-semibold hover:underline cursor-pointer rounded-lg"
                     >
-                      <Trash size={13} />
+                      <Trash size={14} />
                       Hapus
                     </button>
                   </div>
@@ -446,12 +465,13 @@ export const ClosingScreen: React.FC = () => {
         )}
       </main>
 
-      <div className="fixed bottom-20 right-4 sm:right-auto sm:left-1/2 sm:translate-x-36 z-40">
+      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] right-4 sm:right-auto sm:left-1/2 sm:translate-x-36 z-40">
         <button
           type="button"
           data-testid="closing-add-fab"
           onClick={() => setIsAdding(true)}
-          className="w-13 h-13 rounded-full bg-[#00A3A6] hover:bg-[#008F91] text-white font-black flex items-center justify-center shadow-lg shadow-[#00A3A6]/30 active:scale-95 transition-all cursor-pointer"
+          aria-label="Tambah Closing Baru"
+          className="w-14 h-14 rounded-full bg-[#00A3A6] hover:bg-[#008F91] text-white font-black flex items-center justify-center shadow-lg shadow-[#00A3A6]/30 active:scale-95 transition-all cursor-pointer"
           title="Tambah Closing Baru"
         >
           <Plus size={24} weight="bold" />

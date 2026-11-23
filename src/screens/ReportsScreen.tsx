@@ -26,6 +26,7 @@ import {
 } from "@/src/services/reportExport";
 import { currentYM, monthEnd, monthStart, todayYMD } from "@/src/lib/date";
 import { formatInt, formatPercent, formatRupiah } from "@/src/lib/format";
+import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
 
 type ReportTab = "whatsapp" | "mtd";
 
@@ -104,8 +105,18 @@ export const ReportsScreen: React.FC<{
     }
   };
 
+  const swipeHandlers = useMonthSwipe({
+    year,
+    month,
+    onChange: (y, m) => setYM({ year: y, month: m }),
+    enabled: activeTab === "mtd" && !previewOpen,
+  });
+
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div
+      className="flex flex-col min-h-screen pb-[calc(6rem+env(safe-area-inset-bottom,0px))]"
+      {...swipeHandlers}
+    >
       <Header
         title="Reports"
         subtitle={
@@ -121,7 +132,7 @@ export const ReportsScreen: React.FC<{
           <button
             type="button"
             onClick={() => setActiveTab("whatsapp")}
-            className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`min-h-[44px] py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "whatsapp"
                 ? "bg-white dark:bg-[#202230] text-emerald-600 dark:text-emerald-400 shadow-sm font-black"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
@@ -133,7 +144,7 @@ export const ReportsScreen: React.FC<{
           <button
             type="button"
             onClick={() => setActiveTab("mtd")}
-            className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`min-h-[44px] py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === "mtd"
                 ? "bg-white dark:bg-[#202230] text-[#00A3A6] dark:text-[#38D9D9] shadow-sm font-black"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
@@ -460,7 +471,7 @@ export const ReportsScreen: React.FC<{
             type="button"
             onClick={handleDownloadHtml}
             disabled={htmlBusy}
-            className="flex items-center justify-center gap-1.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer transition-colors"
+            className="min-h-[44px] flex items-center justify-center gap-1.5 py-2 text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer transition-colors"
           >
             <DownloadSimple size={14} />
             <span>Simpan dokumen HTML offline (dapat diprint kapan saja)</span>
@@ -491,7 +502,7 @@ export const ReportsScreen: React.FC<{
                   type="button"
                   onClick={handleDownloadPdf}
                   disabled={pdfBusy}
-                  className="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                  className="min-h-[44px] px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
                   title="Download File PDF"
                 >
                   <FilePdf size={16} weight="fill" />
@@ -500,7 +511,7 @@ export const ReportsScreen: React.FC<{
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+                  className="min-h-[44px] px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all"
                   title="Cetak via Browser"
                 >
                   <Printer size={16} weight="bold" />
@@ -509,7 +520,7 @@ export const ReportsScreen: React.FC<{
                 <button
                   type="button"
                   onClick={() => setPreviewOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer ml-1"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer ml-1"
                   aria-label="Tutup preview"
                 >
                   <X size={20} />
@@ -525,12 +536,12 @@ export const ReportsScreen: React.FC<{
               />
             </div>
 
-            <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161722] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
+            <div className="px-4 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#161722] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
               <span>Format A4 Landscape · Tabel & Kartu Individual SA Lengkap</span>
               <button
                 type="button"
                 onClick={handleDownloadHtml}
-                className="hover:underline flex items-center gap-1 cursor-pointer text-slate-600 dark:text-slate-300"
+                className="min-h-[44px] px-2 hover:underline flex items-center gap-1 cursor-pointer text-slate-600 dark:text-slate-300"
               >
                 <DownloadSimple size={13} />
                 <span>Download file HTML</span>
