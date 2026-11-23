@@ -36,7 +36,7 @@ export function buildWhatsappReport(date: string, slotOverride?: string): string
 
   const dayProd = productionForDay(date);
   const dayCoed = coedTotals(year, month, date);
-  const monthCoed = coedTotals(year, month);
+  const monthCoed = coedTotals(year, month, undefined, date);
 
   const monthSales = salesAgg(year, month, undefined, date);
   const duesUnit = monthSales.duesUnit;
@@ -53,7 +53,7 @@ export function buildWhatsappReport(date: string, slotOverride?: string): string
   const salesUnitDisplay = n(daySalesUnit);
 
   const cancelToday = cancellationCount(year, month, undefined, date);
-  const totalCancelMonth = cancellationCount(year, month);
+  const totalCancelMonth = cancellationCount(year, month, undefined, undefined, date);
 
   const lines: string[] = [
     `*${academyCode} ${displayDate(date)} (${slot})*`,

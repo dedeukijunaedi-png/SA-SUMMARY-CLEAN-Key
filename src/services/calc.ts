@@ -114,7 +114,7 @@ export function salesUnitForDay(date: string): number {
   return Number(r?.u ?? 0);
 }
 
-export function cancellationCount(year: number, month: number, advisorId?: number, exactDate?: string): number {
+export function cancellationCount(year: number, month: number, advisorId?: number, exactDate?: string, upToDate?: string): number {
   const conds = ["deleted_at IS NULL"];
   const args: any[] = [];
   if (exactDate) {
@@ -123,6 +123,10 @@ export function cancellationCount(year: number, month: number, advisorId?: numbe
   } else {
     conds.push("strftime('%Y',date)=?", "strftime('%m',date)=?");
     args.push(String(year), mm(month));
+    if (upToDate) {
+      conds.push("date<=?");
+      args.push(upToDate);
+    }
   }
   if (advisorId) {
     conds.push("advisor_id=?");
@@ -137,7 +141,7 @@ export function cancellationCount(year: number, month: number, advisorId?: numbe
 
 export type CoedTotals = Record<CoedCategory, number> & { total: number };
 
-export function coedTotals(year: number, month: number, exactDate?: string): CoedTotals {
+export function coedTotals(year: number, month: number, exactDate?: string, upToDate?: string): CoedTotals {
   const conds = ["deleted_at IS NULL"];
   const args: any[] = [];
   if (exactDate) {
@@ -146,6 +150,10 @@ export function coedTotals(year: number, month: number, exactDate?: string): Coe
   } else {
     conds.push("strftime('%Y',date)=?", "strftime('%m',date)=?");
     args.push(String(year), mm(month));
+    if (upToDate) {
+      conds.push("date<=?");
+      args.push(upToDate);
+    }
   }
   const rows = db().getAllSync<{ category: CoedCategory; s: number }>(
     `SELECT category, COALESCE(SUM(amount),0) s FROM coed_entries WHERE ${conds.join(" AND ")} GROUP BY category`,
