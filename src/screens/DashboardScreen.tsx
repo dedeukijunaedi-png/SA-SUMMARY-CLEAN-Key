@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Target,
   TrendUp,
@@ -8,14 +8,22 @@ import {
   SquaresFour,
   Sparkle,
   ArrowsInSimple,
+  CloudArrowUp,
 } from "@phosphor-icons/react";
 import { Card } from "@/src/components/ui/Card";
 import { Header } from "@/src/components/ui/Header";
 import { MonthNavigator } from "@/src/components/ui/Inputs";
 import { ProgressBar, SectionTitle, StatCard } from "@/src/components/ui/UIComponents";
 import { FunnelView } from "@/src/components/ui/FunnelView";
+import { useToast } from "@/src/components/ui/Toast";
 import { dashboard, memberSummaries, unitsNeeded, DashboardData, MemberSummary } from "@/src/services/calc";
+import { subscribeDatabase } from "@/src/db/database";
 import { listProducts } from "@/src/db/repo";
+import {
+  dismissBackupBannerToday,
+  getBackupReminderState,
+  runBackupAndRecord,
+} from "@/src/lib/backupReminder";
 import { currentYM } from "@/src/lib/date";
 import { formatCompactRupiah, formatInt, formatRupiah } from "@/src/lib/format";
 import { MemberDetailModal } from "./MemberDetailModal";
@@ -25,9 +33,12 @@ import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
 const COMPACT_STORAGE_KEY = "sa_dashboard_compact";
 
 export const DashboardScreen: React.FC = () => {
+  const { showToast } = useToast();
   const [{ year, month }, setYM] = useState(currentYM());
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"summary" | "analytics">("summary");
+  const [backupReminder, setBackupReminder] = useState(() => getBackupReminderState());
+  const [backupBusy, setBackupBusy] = useState(false);
   const [compact, setCompact] = useState<boolean>(() => {
     try {
       return typeof window !== "undefined" && window.localStorage.getItem(COMPACT_STORAGE_KEY) === "1";
@@ -35,6 +46,32 @@ export const DashboardScreen: React.FC = () => {
       return false;
     }
   });
+
+  useEffect(() => {
+    setBackupReminder(getBackupReminderState());
+    return subscribeDatabase(() => {
+      setBackupReminder(getBackupReminderState());
+    });
+  }, []);
+
+  const handleBackupNow = async () => {
+    if (backupBusy) return;
+    setBackupBusy(true);
+    try {
+      await runBackupAndRecord();
+      setBackupReminder(getBackupReminderState());
+      showToast("Backup berhasil disimpan", "success");
+    } catch (e: any) {
+      showToast("Gagal backup: " + (e?.message ?? ""), "error");
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const handleDismissBackup = () => {
+    dismissBackupBannerToday();
+    setBackupReminder(getBackupReminderState());
+  };
 
   const toggleCompact = () => {
     setCompact((prev) => {
@@ -70,6 +107,52 @@ export const DashboardScreen: React.FC = () => {
           compact ? "px-2.5 sm:px-4 pt-2 gap-1.5 sm:gap-2.5" : "px-4 pt-3 gap-3"
         }`}
       >
+        {backupReminder.shouldShow && (
+          <div
+            role="status"
+            data-testid="backup-reminder-banner"
+            className={`rounded-2xl border border-amber-300/90 dark:border-amber-700/60 bg-amber-50/95 dark:bg-amber-950/35 shadow-xs flex flex-col gap-2 ${
+              compact ? "p-2.5" : "p-3"
+            }`}
+          >
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                <CloudArrowUp size={18} weight="bold" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-extrabold text-amber-950 dark:text-amber-100 leading-snug">
+                  {backupReminder.lastBackupAt === null
+                    ? "Data belum pernah di-backup"
+                    : `Sudah ${backupReminder.daysSinceBackup} hari belum backup`}
+                </p>
+                <p className="text-[11px] text-amber-800/90 dark:text-amber-200/80 leading-snug mt-0.5">
+                  Simpan file JSON agar data aman jika HP berganti atau browser dibersihkan.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="btn-backup-now"
+                onClick={handleBackupNow}
+                disabled={backupBusy}
+                className="flex-1 min-h-[44px] px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-[0.99] disabled:opacity-60 text-white text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              >
+                {backupBusy ? "Menyimpan..." : "Backup Sekarang"}
+              </button>
+              <button
+                type="button"
+                data-testid="btn-backup-later"
+                onClick={handleDismissBackup}
+                disabled={backupBusy}
+                className="min-h-[44px] px-3.5 py-2 rounded-xl bg-white/90 dark:bg-[#1E202B] hover:bg-white dark:hover:bg-[#282B3A] text-amber-900 dark:text-amber-200 border border-amber-300/80 dark:border-amber-700/50 text-xs font-semibold transition-all cursor-pointer"
+              >
+                Nanti
+              </button>
+            </div>
+          </div>
+        )}
+
         <MonthNavigator year={year} month={month} onChange={(y, m) => setYM({ year: y, month: m })} />
 
         <div className="flex items-center gap-2">

@@ -10,7 +10,14 @@ export interface ShareFileOptions {
   base64?: string;
 }
 
+// True bila dialog bagikan terakhir dibatalkan pengguna (file hanya ada di cache, belum disimpan).
+let lastShareCancelled = false;
+export function wasLastShareCancelled(): boolean {
+  return lastShareCancelled;
+}
+
 export async function shareOrSaveFile(options: ShareFileOptions): Promise<number> {
+  lastShareCancelled = false;
   const { filename, title = filename, mimeType, text, base64 } = options;
   const isNative = Capacitor.isNativePlatform();
 
@@ -40,7 +47,10 @@ export async function shareOrSaveFile(options: ShareFileOptions): Promise<number
       return fileSize;
     } catch (err: any) {
       const msg = String(err?.message || err || "");
-      if (/cancel/i.test(msg)) return fileSize;
+      if (/cancel/i.test(msg)) {
+        lastShareCancelled = true;
+        return fileSize;
+      }
       shareError = msg || "tidak diketahui";
       console.error("Native share error:", err);
     }

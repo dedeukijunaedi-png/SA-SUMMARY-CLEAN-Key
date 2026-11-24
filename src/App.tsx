@@ -3,6 +3,7 @@ import { Spinner } from "@phosphor-icons/react";
 import { ToastProvider } from "@/src/components/ui/Toast";
 import { ThemeProvider } from "@/src/lib/theme";
 import { BottomNav, TabId } from "@/src/components/ui/BottomNav";
+import { ErrorBoundary } from "@/src/components/ui/ErrorBoundary";
 import { initDatabase, subscribeDatabase } from "@/src/db/database";
 import { DashboardScreen } from "@/src/screens/DashboardScreen";
 import { ProductionScreen } from "@/src/screens/ProductionScreen";
@@ -109,10 +110,26 @@ export default function App() {
       <ToastProvider>
         <DbGate>
           <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A1118] text-[#0F172A] dark:text-[#F1F5F9] transition-colors selection:bg-[#00A3A6]/25">
-            {currentTab === "index" && <DashboardScreen />}
-            {currentTab === "production" && <ProductionScreen />}
-            {currentTab === "closing" && <ClosingScreen />}
-            {currentTab === "more" && <MoreScreen />}
+            {currentTab === "index" && (
+              <ErrorBoundary key="index" screenName="Dashboard">
+                <DashboardScreen />
+              </ErrorBoundary>
+            )}
+            {currentTab === "production" && (
+              <ErrorBoundary key="production" screenName="Produksi">
+                <ProductionScreen />
+              </ErrorBoundary>
+            )}
+            {currentTab === "closing" && (
+              <ErrorBoundary key="closing" screenName="Closing">
+                <ClosingScreen />
+              </ErrorBoundary>
+            )}
+            {currentTab === "more" && (
+              <ErrorBoundary key="more" screenName="Lainnya">
+                <MoreScreen />
+              </ErrorBoundary>
+            )}
 
             {!isKeyboardOpen && <BottomNav currentTab={currentTab} onChangeTab={setCurrentTab} />}
           </div>

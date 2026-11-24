@@ -1,11 +1,16 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Database, DownloadSimple, UploadSimple, Warning } from "@phosphor-icons/react";
 import { Header } from "@/src/components/ui/Header";
 import { Card } from "@/src/components/ui/Card";
 import { Button } from "@/src/components/ui/Inputs";
 import { KeyValue, SectionTitle } from "@/src/components/ui/UIComponents";
 import { useToast } from "@/src/components/ui/Toast";
-import { exportDatabaseToJson } from "@/src/services/exporter";
+import { subscribeDatabase } from "@/src/db/database";
+import {
+  formatLastBackupDisplay,
+  getLastBackupDate,
+  runBackupAndRecord,
+} from "@/src/lib/backupReminder";
 import {
   applyImport,
   ImportMode,
@@ -25,11 +30,20 @@ export const DataScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [mode, setMode] = useState<ImportMode>("merge");
   const [logs, setLogs] = useState(() => listImportLogs());
+  const [lastBackupAt, setLastBackupAt] = useState<string | null>(() => getLastBackupDate());
+
+  useEffect(() => {
+    setLastBackupAt(getLastBackupDate());
+    return subscribeDatabase(() => {
+      setLastBackupAt(getLastBackupDate());
+    });
+  }, []);
 
   const handleExport = async () => {
     setBusy(true);
     try {
-      await exportDatabaseToJson();
+      await runBackupAndRecord();
+      setLastBackupAt(getLastBackupDate());
       setLogs(listImportLogs());
       showToast("Database berhasil diexport / dibagikan", "success");
     } catch (e: any) {
@@ -106,6 +120,12 @@ export const DataScreen: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
             Simpan seluruh data (team, produk, closing, target, production, COED, cancellation, settings) ke satu file JSON.
+          </p>
+          <p
+            data-testid="last-backup-info"
+            className="text-xs font-semibold text-slate-700 dark:text-slate-300"
+          >
+            Backup terakhir: <span className="text-[#00A3A6] dark:text-[#38D9D9]">{formatLastBackupDisplay(lastBackupAt)}</span>
           </p>
           <Button
             title="Export ke JSON"
