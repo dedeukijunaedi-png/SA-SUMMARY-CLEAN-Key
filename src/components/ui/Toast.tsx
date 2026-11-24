@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 import { CheckCircle, WarningCircle, X, Info } from "@phosphor-icons/react";
+import { useBackHandler } from "@/src/lib/androidBack";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -11,6 +12,7 @@ export interface ToastAction {
 export interface ToastOptions {
   duration?: number;
   action?: ToastAction;
+  dedupeKey?: string;
 }
 
 interface ToastItem {
@@ -61,9 +63,25 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const showToast = useCallback(
     (message: string, type: ToastType = "info", options?: ToastOptions) => {
-      const id = Math.random().toString(36).slice(2);
+      const id = options?.dedupeKey ?? Math.random().toString(36).slice(2);
       const duration = options?.duration ?? 3200;
-      setToasts((prev) => [...prev, { id, message, type, action: options?.action }]);
+      const existingTimer = timersRef.current.get(id);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+        timersRef.current.delete(id);
+      }
+      setToasts((prev) => {
+        const nextItem: ToastItem = { id, message, type, action: options?.action };
+        if (options?.dedupeKey) {
+          const idx = prev.findIndex((t) => t.id === id);
+          if (idx !== -1) {
+            const copy = [...prev];
+            copy[idx] = nextItem;
+            return copy;
+          }
+        }
+        return [...prev, nextItem];
+      });
       const timer = setTimeout(() => {
         timersRef.current.delete(id);
         setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -79,12 +97,17 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   }, []);
 
-  const handleConfirm = (confirmed: boolean) => {
-    if (confirmDialog) {
-      confirmDialog.resolve(confirmed);
-      setConfirmDialog(null);
-    }
-  };
+  const handleConfirm = useCallback(
+    (confirmed: boolean) => {
+      if (confirmDialog) {
+        confirmDialog.resolve(confirmed);
+        setConfirmDialog(null);
+      }
+    },
+    [confirmDialog],
+  );
+
+  useBackHandler(confirmDialog !== null, () => handleConfirm(false), "dialog");
 
   return (
     <ToastContext.Provider value={{ showToast, confirm }}>

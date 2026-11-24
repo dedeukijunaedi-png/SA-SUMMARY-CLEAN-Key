@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Spinner } from "@phosphor-icons/react";
-import { ToastProvider } from "@/src/components/ui/Toast";
+import { ToastProvider, useToast } from "@/src/components/ui/Toast";
 import { ThemeProvider } from "@/src/lib/theme";
 import { BottomNav, TabId } from "@/src/components/ui/BottomNav";
 import { ErrorBoundary } from "@/src/components/ui/ErrorBoundary";
@@ -10,6 +10,8 @@ import { ProductionScreen } from "@/src/screens/ProductionScreen";
 import { ClosingScreen } from "@/src/screens/ClosingScreen";
 import { MoreScreen } from "@/src/screens/MoreScreen";
 import { useKeyboardViewport } from "@/src/lib/useKeyboardViewport";
+import { useAndroidBackButton } from "@/src/lib/androidBack";
+import { syncWaReminders, syncWaRemindersIfSignatureChanged } from "@/src/lib/waReminder";
 
 function PersistWarning() {
   const [failed, setFailed] = useState(false);
@@ -38,12 +40,18 @@ function DbGate({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [, setDbVersion] = useState(0);
 
+  const readyRef = useRef(false);
+
   useEffect(() => {
     let unmounted = false;
     (async () => {
       try {
         await initDatabase();
-        if (!unmounted) setReady(true);
+        if (!unmounted) {
+          readyRef.current = true;
+          setReady(true);
+          void syncWaReminders(true);
+        }
       } catch (err: any) {
         console.error("DB initialization failed", err);
         if (!unmounted) setError(err?.message ?? "Gagal inisialisasi database");
@@ -52,6 +60,9 @@ function DbGate({ children }: { children: React.ReactNode }) {
 
     const unsubscribe = subscribeDatabase(() => {
       setDbVersion((v) => v + 1);
+      if (readyRef.current) {
+        syncWaRemindersIfSignatureChanged();
+      }
     });
 
     return () => {
@@ -101,38 +112,56 @@ function DbGate({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+function AppContent() {
   const [currentTab, setCurrentTab] = useState<TabId>("index");
   const { isKeyboardOpen } = useKeyboardViewport();
+  const { showToast } = useToast();
 
+  useAndroidBackButton({
+    isAtRootDashboard: currentTab === "index",
+    onNavigateToDashboard: () => setCurrentTab("index"),
+    onShowExitPrompt: () => {
+      showToast("Tekan sekali lagi untuk keluar", "info", {
+        duration: 2000,
+        dedupeKey: "android-exit",
+      });
+    },
+  });
+
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A1118] text-[#0F172A] dark:text-[#F1F5F9] transition-colors selection:bg-[#00A3A6]/25">
+      {currentTab === "index" && (
+        <ErrorBoundary key="index" screenName="Dashboard">
+          <DashboardScreen />
+        </ErrorBoundary>
+      )}
+      {currentTab === "production" && (
+        <ErrorBoundary key="production" screenName="Produksi">
+          <ProductionScreen />
+        </ErrorBoundary>
+      )}
+      {currentTab === "closing" && (
+        <ErrorBoundary key="closing" screenName="Closing">
+          <ClosingScreen />
+        </ErrorBoundary>
+      )}
+      {currentTab === "more" && (
+        <ErrorBoundary key="more" screenName="Lainnya">
+          <MoreScreen />
+        </ErrorBoundary>
+      )}
+
+      {!isKeyboardOpen && <BottomNav currentTab={currentTab} onChangeTab={setCurrentTab} />}
+    </div>
+  );
+}
+
+export default function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
         <DbGate>
-          <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#0A1118] text-[#0F172A] dark:text-[#F1F5F9] transition-colors selection:bg-[#00A3A6]/25">
-            {currentTab === "index" && (
-              <ErrorBoundary key="index" screenName="Dashboard">
-                <DashboardScreen />
-              </ErrorBoundary>
-            )}
-            {currentTab === "production" && (
-              <ErrorBoundary key="production" screenName="Produksi">
-                <ProductionScreen />
-              </ErrorBoundary>
-            )}
-            {currentTab === "closing" && (
-              <ErrorBoundary key="closing" screenName="Closing">
-                <ClosingScreen />
-              </ErrorBoundary>
-            )}
-            {currentTab === "more" && (
-              <ErrorBoundary key="more" screenName="Lainnya">
-                <MoreScreen />
-              </ErrorBoundary>
-            )}
-
-            {!isKeyboardOpen && <BottomNav currentTab={currentTab} onChangeTab={setCurrentTab} />}
-          </div>
+          <AppContent />
         </DbGate>
       </ToastProvider>
     </ThemeProvider>

@@ -22,6 +22,7 @@ import { ReportsScreen } from "./ReportsScreen";
 import { WhatsappScreen } from "./WhatsappScreen";
 import { DataScreen } from "./DataScreen";
 import { SettingsScreen } from "./SettingsScreen";
+import { useBackHandler } from "@/src/lib/androidBack";
 
 type SubView =
   | "targets"
@@ -45,6 +46,8 @@ interface MenuItem {
 
 export const MoreScreen: React.FC = () => {
   const [subView, setSubView] = useState<SubView>(null);
+
+  useBackHandler(subView !== null, () => setSubView(null), "subscreen");
 
   if (subView === "targets") return <TargetsScreen onBack={() => setSubView(null)} />;
   if (subView === "products") return <ProductsScreen onBack={() => setSubView(null)} />;

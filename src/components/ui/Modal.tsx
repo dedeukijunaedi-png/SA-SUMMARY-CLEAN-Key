@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { X } from "@phosphor-icons/react";
 import { useKeyboardViewport } from "@/src/lib/useKeyboardViewport";
+import { useBackHandler } from "@/src/lib/androidBack";
 
 interface ModalProps {
   isOpen: boolean;
@@ -20,6 +21,8 @@ export const Modal: React.FC<ModalProps> = ({
   maxWidth = "md",
 }) => {
   const { isKeyboardOpen, viewportHeight } = useKeyboardViewport();
+
+  useBackHandler(isOpen, onClose, "modal");
 
   useEffect(() => {
     if (isOpen) {

@@ -27,6 +27,7 @@ import {
 import { currentYM, monthEnd, monthStart, todayYMD } from "@/src/lib/date";
 import { formatInt, formatPercent, formatRupiah } from "@/src/lib/format";
 import { useMonthSwipe } from "@/src/lib/useMonthSwipe";
+import { useBackHandler } from "@/src/lib/androidBack";
 
 type ReportTab = "whatsapp" | "mtd";
 
@@ -51,6 +52,8 @@ export const ReportsScreen: React.FC<{
   const [pdfBusy, setPdfBusy] = useState(false);
   const [htmlBusy, setHtmlBusy] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  useBackHandler(previewOpen, () => setPreviewOpen(false), "modal");
 
   useEffect(() => {
     setStart(monthStart(year, month));
